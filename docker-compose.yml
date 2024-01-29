@@ -1,0 +1,93 @@
+version: "3.9"
+
+services:
+  service_samba_folder:
+    restart: always
+    container_name: service_samba_folder
+    build:
+      context: ./services/samba_folder
+    networks:
+      network_service:
+    volumes:
+      - ./folders/users:/var/home-service/users
+      - ./folders/share:/var/home-service/share
+      - ./services/samba_folder/config:/etc/samba/smb.conf.d
+    ports:
+      - "445:445"
+  service_transmission:
+    image: lscr.io/linuxserver/transmission:latest
+    container_name: service_transmission
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Moscow
+     #   - TRANSMISSION_WEB_HOME= #optional
+      - USER=ilnar
+      - PASS=12345
+     #   - WHITELIST= #optional
+     #   - PEERPORT= #optional
+     #   - HOST_WHITELIST= #optional
+    volumes:
+      - ./folders/transmission/config:/config
+      - ./folders/transmission/downloads:/downloads
+      - ./folders/transmission/torrents:/watch
+    ports:
+      - 9091:9091
+      - 51413:51413
+      - 51413:51413/udp
+    restart: always
+  #service_ace_stream:
+  #  restart: always
+  #  container_name: service_ace_stream
+  #  build:
+  #    context: ./services/ace-stream
+  #  networks:
+  #    network_service:
+  #  ports:
+  #    - 6878:6878
+  #    - 8621:8621
+  #    - 8621:8621/udp
+  #    - 8000:8000
+  service_plex:
+    image: lscr.io/linuxserver/plex:latest
+    container_name: service_plex
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Moscow
+      - VERSION=docker
+     # - PLEX_CLAIM=claim-xKEZduwSg8zXbvZ3JHsJ
+    volumes:
+      - ./folders/plex_media_server/library:/config
+      - ./folders/plex_media_server/movies:/movies
+      - ./folders/plex_media_server/tvseries:/tv
+    restart: always
+    ports:
+      - 32400:32400
+      #    - "1900:1900/udp"
+      #    - "5353:5353/udp"
+      #    - "5353:5353/udp"
+      #    - "8324:8324"
+      #    - "32410:32410/udp"
+      #    - "32412:32412/udp"
+      #    - "32413:32413/udp"
+      #    - "32414:32414/udp"
+      #    - "32469:32469"
+  #service_ftp:
+  #  restart: always
+  #  container_name: service_ftp1
+  #  build:
+  #    context: ./services/ftp
+  #  networks:
+  #    network_service:
+  #  volumes:
+  #    - ./folders/share:/var/home-service/share
+  #    - ./folders/users:/var/home-service/users
+  #  ports:
+  #    - 20:20
+  #    - 21:21
+    #  - "22:22"
+    #  - "990:990"
+  #    - 4559-4559:4559-4559
+networks:
+  network_service:
