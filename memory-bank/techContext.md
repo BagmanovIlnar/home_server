@@ -2,8 +2,8 @@
 
 ## Technologies Used
 - **Docker Compose** (version "3.9") — оркестрация всех сервисов
-- **Samba AD DC** (custom build ubuntu:22.04) — Active Directory: DNS (SAMBA_INTERNAL), Kerberos KDC, LDAP/LDAPS, Global Catalog; домен HOME.ARPA
-- **Samba member + winbind** (custom build) — файловый сервер в домене, idmap rid, порт 445
+- **Samba AD DC** (custom build ubuntu:26.04 LTS) — Active Directory: DNS (SAMBA_INTERNAL), Kerberos KDC, LDAP/LDAPS, Global Catalog; домен HOME.ARPA
+- **Samba member + winbind** (custom build ubuntu:26.04 LTS) — файловый сервер в домене, idmap rid, порт 445
 - **Kerberos/krb5** — аутентификация (порты 88, 464)
 - **Transmission** — образ `lscr.io/linuxserver/transmission:latest`, порты 9091 (web UI без пароля), 51413 tcp/udp
 - **Plex Media Server** — образ `lscr.io/linuxserver/plex:latest`, порт 32400
@@ -29,7 +29,7 @@
 ## Dependencies
 - linuxserver/transmission:latest (docker hub lscr.io)
 - linuxserver/plex:latest (docker hub lscr.io)
-- ubuntu:22.04 (база для custom-сборок samba/ftp)
+- ubuntu:26.04 LTS (база для custom-сборок; обновлено с 22.04; проверено: samba-ad-provision, init.d smbd/winbind, rpc server port — всё на месте)
 - vstavrinov/acestream-engine (для отключённого ace-stream; образ сейчас не собирается — отсутствуют файлы контекста)
 
 ## Tool Usage Patterns

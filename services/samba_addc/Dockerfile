@@ -1,11 +1,11 @@
-FROM ubuntu:22.04
+FROM ubuntu:26.04
 
 COPY run.sh /run.sh
 
 RUN apt-get update \
     && apt-get upgrade -y \
     && apt-get install -yy tzdata \
-    && apt-get install -y samba \
+    && apt-get install -y samba samba-ad-provision \
     && apt-get install -y krb5-user \
     && apt-get install -y dnsutils \
     && apt-get clean && rm -rf /var/lib/apt/lists/*

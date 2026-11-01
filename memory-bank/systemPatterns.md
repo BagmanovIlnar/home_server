@@ -29,7 +29,7 @@ docker-compose.yml
 - **Member делает net ads join при каждом старте** (машинный секрет не персистентится) — штатно; DNS-обновления отключены (--no-dns-updates, чтобы не писать docker-IP в DNS)
 - **Member использует DNS от DC** (`dns: 172.28.0.53`) — docker embedded DNS не умеет SRV; DC сам форвардит внешние запросы к AD_DNS_FORWARDER
 - **Секреты в `.env`** (gitignore): AD_ADMIN_PASSWORD, AD_JOIN_PASSWORD; шаблон — `.env.example`
-- **Готовые образы linuxserver.io** для Transmission и Plex; Samba-сервисы собираются кастомно из ubuntu:22.04
+- **Готовые образы linuxserver.io** для Transmission и Plex; Samba-сервисы собираются кастомно из ubuntu:26.04 LTS
 - **Конфиги шар Samba** — файлы в smb.conf.d, при старте run.sh генерирует [global] (домен) и приклеивает шары через cat (построчный while-read убран — манглил бэкслэши/пробелы)
 - **Автосинк ФС ↔ AD (home_sync.sh)** — фоновый цикл в member-контейнере (SYNC_INTERVAL, по умолч. 60с): доменный юзер без каталога → создаётся users/<u> (chown u:domain users, 0700); каталог без юзера в AD → архивируется в users/.deleted/<u>_<ts> (не rm — защита от ложного срабатывания при недоступном DC; гарды wbinfo -P/-u). Работает независимо от способа создания юзера (make user-add / RSAT / samba-tool напрямую)
 - **[homes] защищён** invalid users = root Administrator krbtgt Guest; встроенные учётки не получают шары

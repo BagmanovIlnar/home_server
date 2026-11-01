@@ -132,8 +132,8 @@ docker-compose.yml
 
 ## Technologies Used
 - **Docker Compose** (version "3.9") — оркестрация всех сервисов
-- **Samba AD DC** (custom build ubuntu:22.04) — Active Directory: DNS (SAMBA_INTERNAL), Kerberos KDC, LDAP/LDAPS, Global Catalog; домен HOME.ARPA
-- **Samba member + winbind** (custom build) — файловый сервер в домене, idmap rid, порт 445
+- **Samba AD DC** (custom build ubuntu:26.04 LTS) — Active Directory: DNS (SAMBA_INTERNAL), Kerberos KDC, LDAP/LDAPS, Global Catalog; домен HOME.ARPA
+- **Samba member + winbind** (custom build ubuntu:26.04 LTS) — файловый сервер в домене, idmap rid, порт 445
 - **Kerberos/krb5** — аутентификация (порты 88, 464)
 - **Transmission** — образ `lscr.io/linuxserver/transmission:latest`, порты 9091 (web UI без пароля), 51413 tcp/udp
 - **Plex Media Server** — образ `lscr.io/linuxserver/plex:latest`, порт 32400
@@ -159,7 +159,7 @@ docker-compose.yml
 ## Dependencies
 - linuxserver/transmission:latest (docker hub lscr.io)
 - linuxserver/plex:latest (docker hub lscr.io)
-- ubuntu:22.04 (база для custom-сборок samba/ftp)
+- ubuntu:26.04 LTS (база для custom-сборок; обновлено с 22.04; проверено: samba-ad-provision, init.d smbd/winbind, rpc server port — всё на месте)
 - vstavrinov/acestream-engine (для отключённого ace-stream; образ сейчас не собирается — отсутствуют файлы контекста)
 
 ## Tool Usage Patterns
@@ -182,6 +182,7 @@ docker-compose.yml
 
 ## Recent Changes (по git-истории)
 - 2024+: sh-скрипты bash/ заменены на Makefile: user-add/user-del/user-pass/users (samba-tool) + env/up/down/logs/ps; README и память обновлены
+- 2024+: БАЗА ОБРАЗОВ: ubuntu 22.04 → 26.04 LTS (addc/folder/ftp + мёртвые plex/transmission Dockerfile); в DC добавлен samba-ad-provision; проверено: init.d smbd/winbind в resolute, rpc server port актуален, пакет в resolute-updates есть
 - 2024+: АУДИТ service_plex: compose-конфиг корректен; TZ параметризован через \${TZ} (plex+transmission); добавлены build-plex/build-transmission (pull готовых образов), build теперь и pull'ит; задокументировано: после remove-plex — повторная привязка plex.tv (PLEX_CLAIM) и пересборка библиотек
 - 2024+: Makefile расширен группами целей: up-*/down-*/build-*/remove-* (по каждому сервису dc/nas/plex/transmission); remove-* — полное удаление (контейнер+образ+volume+данные folders/, с подтверждением и CONFIRM=yes для обхода), чтобы prune не требовался
 - 2024+: АУДИТ samba_folder + автосинк ФС↔AD: новый home_sync.sh (авто-создание/архивация домашних каталогов по состоянию AD), исправлены баги: while-read-манглилг в run.sh → cat; add_user.sh — set -e + ожидание видимости юзера в winbind (гонка кэша) + парсинг .env от каталога скрипта; del_user.sh — set -e (ФС не трогаем при ошибке AD); [homes] — invalid users для встроенных учёток
@@ -258,7 +259,7 @@ docker-compose.yml
 
 ## Evolution of Project Decisions
 - 2024+: добавлен Samba AD DC для единой аутентификации Linux/Windows/macOS; файловый сервер стал member домена; локальные юзеры smbpasswd заменены на samba-tool
-- Сначала подход «всё собираем сами из ubuntu:22.04» (Dockerfile'ы для samba, ftp, transmission, plex, ace-stream)
+- Сначала подход «всё собираем сами из ubuntu:22.04» (Dockerfile'ы для samba, ftp, transmission, plex, ace-stream); 2024+: база всех custom-образов поднята до ubuntu:26.04 LTS (в DC добавлен пакет samba-ad-provision), проверено по файллистам/доке samba
 - Затем переход на готовые образы linuxserver для Transmission и Plex (собственные Dockerfile'ы остались как артефакты)
 - Ace Stream: первая версия (HTTPAceProxy + acestream 3.1.74 на ubuntu:18.04, python2) была заброшена и закомментирована; вторая попытка на базе `vstavrinov/acestream-engine` тоже не доведена до конца
 - FTP-сервис был рабочей альтернативой файлового доступа, но вытеснен Samba и отключён

@@ -31,7 +31,7 @@
 
 ## Evolution of Project Decisions
 - 2024+: добавлен Samba AD DC для единой аутентификации Linux/Windows/macOS; файловый сервер стал member домена; локальные юзеры smbpasswd заменены на samba-tool
-- Сначала подход «всё собираем сами из ubuntu:22.04» (Dockerfile'ы для samba, ftp, transmission, plex, ace-stream)
+- Сначала подход «всё собираем сами из ubuntu:22.04» (Dockerfile'ы для samba, ftp, transmission, plex, ace-stream); 2024+: база всех custom-образов поднята до ubuntu:26.04 LTS (в DC добавлен пакет samba-ad-provision), проверено по файллистам/доке samba
 - Затем переход на готовые образы linuxserver для Transmission и Plex (собственные Dockerfile'ы остались как артефакты)
 - Ace Stream: первая версия (HTTPAceProxy + acestream 3.1.74 на ubuntu:18.04, python2) была заброшена и закомментирована; вторая попытка на базе `vstavrinov/acestream-engine` тоже не доведена до конца
 - FTP-сервис был рабочей альтернативой файлового доступа, но вытеснен Samba и отключён
