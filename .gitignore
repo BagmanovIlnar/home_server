@@ -1,2 +1,4 @@
 .idea
 folders
+.env
+.DS_Store

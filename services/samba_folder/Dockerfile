@@ -3,6 +3,7 @@ FROM ubuntu:22.04
 WORKDIR /var/home-service
 
 COPY run.sh /run.sh
+COPY home_sync.sh /home_sync.sh
 
 RUN echo "samba" && apt-get update \
     && apt-get upgrade -y \
@@ -16,6 +17,6 @@ RUN echo "samba" && apt-get update \
     && apt-get install -y ubuntu-keyring \
     && apt-get install -y zip
 
-RUN apt-get install -y samba
+RUN apt-get install -y samba winbind krb5-user dnsutils ldb-tools
 
 CMD ["bash","/run.sh"]

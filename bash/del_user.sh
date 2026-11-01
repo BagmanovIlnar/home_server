@@ -1,13 +1,21 @@
 #!/bin/sh
+# Удаление пользователя Active Directory и его домашнего каталога
+# Использование: ./del_user.sh -u <username>
+# set -e: если удаление из AD не удалось — ФС-каталог НЕ трогаем
+set -e
+
 while getopts u: flag
 do
   case "$flag" in
     u) username=${OPTARG};;
   esac
 done
-docker exec -it service_samba_folder bash -c "smbpasswd -x $username";
-docker exec -it service_samba_folder bash -c "deluser $username";
-docker exec -it service_samba_folder bash -c "rmdir -R /var/home-service/users/$username";
-#docker exec -t service_ftp1 bash -c "deluser $username";
 
+if [ -z "$username" ]; then
+  echo "Usage: $0 -u <username>"
+  exit 1
+fi
 
+docker exec service_samba_addc samba-tool user delete "$username"
+docker exec service_samba_folder rm -rf "/var/home-service/users/$username"
+echo "OK: user $username deleted (AD + home dir)"

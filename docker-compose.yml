@@ -1,11 +1,80 @@
 version: "3.9"
 
 services:
+  # ============================================================
+  # Samba AD DC — домен-контроллер (Active Directory)
+  # DNS + Kerberos + LDAP для Linux/Windows/macOS
+  # ПОРТ 445 НЕ публикуется (его занимает файловый сервер) =>
+  # ограничение: GPO/SYSVOL с Windows-клиентов недоступны (вход в домен и логин работают)
+  # ============================================================
+  service_samba_addc:
+    restart: always
+    container_name: service_samba_addc
+    build:
+      context: ./services/samba_addc
+    hostname: ${AD_DC_HOSTNAME:-dc1}
+    domainname: ${AD_REALM:-home.arpa}
+    environment:
+      - TZ=${TZ:-Europe/Moscow}
+      - REALM=${AD_REALM:-HOME.ARPA}
+      - DOMAIN=${AD_DOMAIN:-HOME}
+      - HOSTNAME=${AD_DC_HOSTNAME:-dc1}
+      - DNS_FORWARDER=${AD_DNS_FORWARDER:-1.1.1.1}
+      - ADMIN_PASS=${AD_ADMIN_PASSWORD:?Set AD_ADMIN_PASSWORD in .env (see .env.example)}
+    networks:
+      network_service:
+        ipv4_address: 172.28.0.53   # фиксированный IP внутри docker-сети (используется как DNS)
+    volumes:
+      - ./folders/samba_addc/etc:/etc/samba
+      - ./folders/samba_addc/lib:/var/lib/samba
+    tmpfs:
+      - /run/samba
+      - /var/cache/samba
+    ports:
+      - "53:53"        # DNS (tcp/udp)
+      - "53:53/udp"
+      - "88:88"        # Kerberos (tcp/udp)
+      - "88:88/udp"
+      - "135:135"      # RPC endpoint mapper
+      - "389:389"      # LDAP (tcp/udp)
+      - "389:389/udp"
+      - "464:464"      # kpasswd (tcp/udp)
+      - "464:464/udp"
+      - "636:636"      # LDAPS
+      - "3268:3268"    # Global Catalog
+      - "3269:3269"    # Global Catalog over TLS
+      - "49152:49152"  # фиксированный RPC-порт (см. run.sh: rpc server port)
+    healthcheck:
+      test: ["CMD-SHELL", "host -t SRV _ldap._tcp.$$REALM 127.0.0.1 | grep -q SRV"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+
+  # ============================================================
+  # Файловый сервер Samba — member домена AD
+  # Шары: home_share (гость) + персональные каталоги доменных пользователей
+  # ============================================================
   service_samba_folder:
     restart: always
     container_name: service_samba_folder
     build:
       context: ./services/samba_folder
+    hostname: nas
+    depends_on:
+      service_samba_addc:
+        condition: service_healthy
+    environment:
+      - TZ=${TZ:-Europe/Moscow}
+      - REALM=${AD_REALM:-HOME.ARPA}
+      - DOMAIN=${AD_DOMAIN:-HOME}
+      - DC=service_samba_addc
+      - JOIN_USER=${AD_JOIN_USER:-administrator}
+      - JOIN_PASS=${AD_JOIN_PASSWORD:?Set AD_JOIN_PASSWORD in .env (see .env.example)}
+    dns:
+      - 172.28.0.53     # DNS = домен-контроллер (SRV-записи + форвардер наружу)
+    extra_hosts:
+      - "service_samba_addc:172.28.0.53"
     networks:
       network_service:
     volumes:
@@ -14,6 +83,10 @@ services:
       - ./services/samba_folder/config:/etc/samba/smb.conf.d
     ports:
       - "445:445"
+
+  # ============================================================
+  # Torrent-клиент
+  # ============================================================
   service_transmission:
     image: lscr.io/linuxserver/transmission:latest
     container_name: service_transmission
@@ -36,18 +109,10 @@ services:
       - 51413:51413
       - 51413:51413/udp
     restart: always
-  #service_ace_stream:
-  #  restart: always
-  #  container_name: service_ace_stream
-  #  build:
-  #    context: ./services/ace-stream
-  #  networks:
-  #    network_service:
-  #  ports:
-  #    - 6878:6878
-  #    - 8621:8621
-  #    - 8621:8621/udp
-  #    - 8000:8000
+
+  # ============================================================
+  # Медиасервер
+  # ============================================================
   service_plex:
     image: lscr.io/linuxserver/plex:latest
     container_name: service_plex
@@ -64,15 +129,19 @@ services:
     restart: always
     ports:
       - 32400:32400
-      #    - "1900:1900/udp"
-      #    - "5353:5353/udp"
-      #    - "5353:5353/udp"
-      #    - "8324:8324"
-      #    - "32410:32410/udp"
-      #    - "32412:32412/udp"
-      #    - "32413:32413/udp"
-      #    - "32414:32414/udp"
-      #    - "32469:32469"
+
+  #service_ace_stream:
+  #  restart: always
+  #  container_name: service_ace_stream
+  #  build:
+  #    context: ./services/ace-stream
+  #  networks:
+  #    network_service:
+  #  ports:
+  #    - 6878:6878
+  #    - 8621:8621
+  #    - 8621:8621/udp
+  #    - 8000:8000
   #service_ftp:
   #  restart: always
   #  container_name: service_ftp1
@@ -89,5 +158,11 @@ services:
     #  - "22:22"
     #  - "990:990"
   #    - 4559-4559:4559-4559
+
 networks:
   network_service:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+          gateway: 172.28.0.1

@@ -1,0 +1,37 @@
+# Progress: Home Server
+
+## What Works
+- ✅ **Samba AD DC** (service_samba_addc): новый сервис — домен-контроллер (DNS+Kerberos+LDAP+GC), provisioning при первом старте, база персистентна в folders/samba_addc/, healthcheck через SRV-запрос; ФИЗИЧЕСКИ НЕ РАЗВЁРНУТ на сервере — код написан, ждёт docker compose up
+- ✅ **Файловый сервер в домене** (service_samba_folder): security=ads, winbind, rid-idmap, авто-join при старте; шары home_share + [homes] для доменных юзеров; АВТОСИНК домашних каталогов с AD (home_sync.sh): создание при появлении юзера, архивация в .deleted при удалении
+- ✅ **Управление пользователями AD**: add_user.sh / del_user.sh (samba-tool) + ad_set_password.sh + ad_list_users.sh
+- ~~✅ Управление пользователями: `bash/add_user.sh` (useradd + smbpasswd + каталог с правами 775), `bash/del_user.sh`~~ → заменено на доменные учётки через samba-tool
+- ✅ **Transmission** (linuxserver): web-UI на 9091 без авторизации, peer-порт 51413, watch-папка `folders/transmission/torrents`, загрузки в `folders/transmission/downloads`
+- ✅ **Plex** (linuxserver): порт 32400, библиотека/фильмы/сериалы в `folders/plex_media_server/`, активирован (PLEX_CLAIM больше не нужен)
+- ✅ Все сервисы с `restart: always`, данные персистятся в `folders/`
+- ✅ README со ссылкой на решение проблемы авторизации Plex
+
+## What's Left to Build / потенциальные задачи
+- ⬜ Развёртывание AD на сервере (.env, up, DNS роутера на сервер, пересоздание юзеров, join клиентов Win/Mac/Linux)
+- ⬜ Проверка ограничений: GPO/SYSVOL с Windows недоступны (нет 445 у DC) — подтвердить, что для семьи это не критично
+- ⬜ Решение по ace_stream: образ не собирается (в Dockerfile отсутствуют `search.py`, `setup.cfg`, `default.conf`, `nginx.conf`), сервис закомментирован
+- ⬜ Решение по FTP (vsftpd): полностью готов (Dockerfile, run.sh, vsftpd.conf), но закомментирован в compose; помечен как service_ftp1
+- ⬜ Бэкапы конфигураций и библиотек Plex
+- ⬜ Безопасность: пароль Transmission, firewall-правила
+
+## Known Issues and Limitations
+- ⚠️ AD DC не публикует порт 445 (его занимает файловый сервер): Windows-клиенты не получают GPO/SYSVOL; вход/логин/аутентификация работают
+- ⚠️ Порт 53 хоста должен быть свободен для DC DNS (конфликт с dnsmasq/AdGuard/Pi-hole)
+- ⚠️ Локальные юзеры старого standalone-samba НЕ мигрировали в AD — пересоздать через add_user.sh
+- ⚠️ Windows Home в домен не входит (нужна Pro/Enterprise); Plex/Transmission AD не поддерживают
+- ⚠️ Transmission web-UI без аутентификации — безопасно только в доверенной LAN
+- ⚠️ Лишние/мёртвые файлы: Dockerfile+run.sh для plex и transmission не используются (compose берёт linuxserver-образы); старая закомментированная секция в ace-stream Dockerfile
+- ⚠️ Общая шара `home_share` с `guest ok = yes` и масками 0777 — любой в LAN может писать/читать
+- ⚠️ `.idea/` частично в git (в .gitignore только верхоуровневая запись, история коммитила)
+
+## Evolution of Project Decisions
+- 2024+: добавлен Samba AD DC для единой аутентификации Linux/Windows/macOS; файловый сервер стал member домена; локальные юзеры smbpasswd заменены на samba-tool
+- Сначала подход «всё собираем сами из ubuntu:22.04» (Dockerfile'ы для samba, ftp, transmission, plex, ace-stream)
+- Затем переход на готовые образы linuxserver для Transmission и Plex (собственные Dockerfile'ы остались как артефакты)
+- Ace Stream: первая версия (HTTPAceProxy + acestream 3.1.74 на ubuntu:18.04, python2) была заброшена и закомментирована; вторая попытка на базе `vstavrinov/acestream-engine` тоже не доведена до конца
+- FTP-сервис был рабочей альтернативой файлового доступа, но вытеснен Samba и отключён
+- Убрана авторизация Transmission для удобства в домашней сети
