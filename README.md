@@ -49,6 +49,8 @@ make ps / logs
 
 ⚠️ `remove-*` запрашивает подтверждение (обойти: `make remove-<x> CONFIRM=yes`) и удаляет данные БЕЗВОЗВРАТНО — образ, контейнер, анонимные volume и соответствующие каталоги в `folders/`. Остались git-заглушки `.gitignore`, чтобы структура репо не поехала.
 
+⚠️ После `make remove-plex` сервер придётся заново привязать к plex.tv (Настройки → Удалённый доступ; при необходимости раскомментировать `PLEX_CLAIM` в docker-compose.yml с новым кодом с plex.tv/claim) и пересобрать библиотеки. Удалённый доступ извне LAN требует проброса порта 32400 на роутере.
+
 Доступ к персональной шаре: `\\<IP-сервера>\ivan`, логин `HOME\ivan`.
 Смена пароля Administrator: `docker exec -it service_samba_addc samba-tool user setpassword Administrator`.
 

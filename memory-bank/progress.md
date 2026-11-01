@@ -23,6 +23,7 @@
 - ⚠️ Порт 53 хоста должен быть свободен для DC DNS (конфликт с dnsmasq/AdGuard/Pi-hole)
 - ⚠️ Локальные юзеры старого standalone-samba НЕ мигрировали в AD — пересоздать через make user-add
 - ⚠️ Windows Home в домен не входит (нужна Pro/Enterprise); Plex/Transmission AD не поддерживают
+- ⚠️ Plex: после remove-plex — повторная привязка к plex.tv (PLEX_CLAIM) и пересоздание библиотек; для удалённого доступа нужен проброс 32400 на роутере; образ :latest (непиненный)
 - ⚠️ Transmission web-UI без аутентификации — безопасно только в доверенной LAN
 - ⚠️ Лишние/мёртвые файлы: Dockerfile+run.sh для plex и transmission не используются (compose берёт linuxserver-образы); старая закомментированная секция в ace-stream Dockerfile
 - ⚠️ Общая шара `home_share` с `guest ok = yes` и масками 0777 — любой в LAN может писать/читать

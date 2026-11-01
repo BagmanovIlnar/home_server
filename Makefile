@@ -20,7 +20,7 @@ PLEX := service_plex
 .PHONY: help env \
   up up-dc up-nas up-transmission up-plex \
   down down-dc down-nas down-transmission down-plex \
-  build build-dc build-nas \
+  build build-dc build-nas build-plex build-transmission \
   remove remove-dc remove-nas remove-transmission remove-plex \
   logs ps users user-add user-del user-pass
 
@@ -58,12 +58,17 @@ down-plex: ## остановить Plex
 
 # ---------- СБОРКА ----------
 
-build: ## собрать все кастомные образы (dc + nas)
+build: ## собрать все кастомные образы (dc + nas) и обновить готовые (pull)
 	docker compose build
+	docker compose pull $(TOR) $(PLEX)
 build-dc: ## собрать образ домен-контроллера
 	docker compose build $(DC)
 build-nas: ## собрать образ файлового сервера
 	docker compose build $(NAS)
+build-plex: ## скачать/обновить готовый образ Plex (pull)
+	docker compose pull $(PLEX)
+build-transmission: ## скачать/обновить готовый образ Transmission (pull)
+	docker compose pull $(TOR)
 
 # ---------- ПОЛНОЕ УДАЛЕНИЕ (контейнер + образ + volume + данные) ----------
 # Удаляется ВСЁ, что связано с сервисом: контейнер, образ, анонимные volume,

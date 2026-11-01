@@ -93,7 +93,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Europe/Moscow
+      - TZ=${TZ:-Europe/Moscow}
      #   - TRANSMISSION_WEB_HOME= #optional
      #   - USER=ilnar
      #   - PASS=12345
@@ -119,7 +119,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Europe/Moscow
+      - TZ=${TZ:-Europe/Moscow}
       - VERSION=docker
      # - PLEX_CLAIM=claim-xKEZduwSg8zXbvZ3JHsJ
     volumes:

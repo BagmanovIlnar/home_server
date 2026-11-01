@@ -5,6 +5,7 @@
 
 ## Recent Changes (по git-истории)
 - 2024+: sh-скрипты bash/ заменены на Makefile: user-add/user-del/user-pass/users (samba-tool) + env/up/down/logs/ps; README и память обновлены
+- 2024+: АУДИТ service_plex: compose-конфиг корректен; TZ параметризован через \${TZ} (plex+transmission); добавлены build-plex/build-transmission (pull готовых образов), build теперь и pull'ит; задокументировано: после remove-plex — повторная привязка plex.tv (PLEX_CLAIM) и пересборка библиотек
 - 2024+: Makefile расширен группами целей: up-*/down-*/build-*/remove-* (по каждому сервису dc/nas/plex/transmission); remove-* — полное удаление (контейнер+образ+volume+данные folders/, с подтверждением и CONFIRM=yes для обхода), чтобы prune не требовался
 - 2024+: АУДИТ samba_folder + автосинк ФС↔AD: новый home_sync.sh (авто-создание/архивация домашних каталогов по состоянию AD), исправлены баги: while-read-манглилг в run.sh → cat; add_user.sh — set -e + ожидание видимости юзера в winbind (гонка кэша) + парсинг .env от каталога скрипта; del_user.sh — set -e (ФС не трогаем при ошибке AD); [homes] — invalid users для встроенных учёток
 - 2024+: добавлен проектный скил `.agents/skills/ponytail-lite/` (Lazy Senior Dev — «лестница лени» против over-engineering, порт MIT-скила ilindaniel/ponytail-lite с доп. правилами под home_server). Работает только для этого проекта: pi сканирует `.agents/skills/` автоматически; принудительно — команда `/skill:ponytail-lite`
