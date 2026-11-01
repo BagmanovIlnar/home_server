@@ -54,6 +54,53 @@ make ps / logs
 Доступ к персональной шаре: `\\<IP-сервера>\ivan`, логин `HOME\ivan`.
 Смена пароля Administrator: `docker exec -it service_samba_addc samba-tool user setpassword Administrator`.
 
+## Решение проблем
+
+### make up падает: «address already in use» на порту 53
+
+Причина: DNS-заглушка systemd-resolved занимает порт 53 (слушает 127.0.0.53 и 127.0.0.54). Docker биндит 0.0.0.0:53, а wildcard-бинд конфликтует с любым занятым адресом на этом порту, даже loopback-адресом. Диагностика:
+
+```bash
+sudo ss -tlnp | grep ':53 '    # systemd-resolve = тот самый случай
+```
+
+**Лечение (один раз на хосте):**
+
+```bash
+# 1. Отключаем DNS-заглушку (падают оба слушателя .53 и .54)
+sudo mkdir -p /etc/systemd/resolved.conf.d
+printf '[Resolve]\nDNSStubListener=no\n' | sudo tee /etc/systemd/resolved.conf.d/no-stub.conf
+
+# 2. Хост должен резолвить мимо заглушки — переключаем resolv.conf на реальные upstream-DNS
+sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
+
+# 3. Перезапуск и проверка
+sudo systemctl restart systemd-resolved
+ss -tlnp | grep ':53 '    # должно быть пусто
+make up
+```
+
+Если после этого хост не резолвит имена (в `/run/systemd/resolve/resolv.conf` нет серверов при статической конфигурации):
+
+```bash
+sudo rm /etc/resolv.conf
+echo "nameserver 192.168.1.1" | sudo tee /etc/resolv.conf    # IP твоего роутера
+```
+
+**Другие случаи занятого порта 53:**
+- `dnsmasq` — `sudo systemctl disable --now dnsmasq`
+- libvirt (если виртуалки не нужны) — `sudo virsh net-destroy default && sudo virsh net-autostart --disable default`
+- AdGuard Home / Pi-hole / bind9 — НЕ отключать вслепую: они раздают DNS сети; вместо этого настроить форвард зоны `home.arpa` на IP сервера
+
+### Прочее
+
+| Симптом | Лечение |
+|---|---|
+| `make up`: «нет .env» | `make env` + пропиши пароли в `.env` (шаблон `.env.example`) |
+| provisioning падает: `PASSWORD_POLICIES` | пароль сложнее: 3 класса символов из 4, от 7 символов |
+| «address already in use» на 445 | на хосте другой SMB-сервер (samba/nas) — остановить его |
+| Windows: «домен не найден» | в DHCP роутера указать DNS = IP сервера (SRV-записи) |
+
 ## Подключение клиентов
 
 **Обязательно:** клиенты должны использовать DNS домена — в роутере (DHCP) укажи DNS = IP этого сервера (порт 53).

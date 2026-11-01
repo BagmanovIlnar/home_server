@@ -91,7 +91,7 @@ docker-compose.yml
 - **Member делает net ads join при каждом старте** (машинный секрет не персистентится) — штатно; DNS-обновления отключены (--no-dns-updates, чтобы не писать docker-IP в DNS)
 - **Member использует DNS от DC** (`dns: 172.28.0.53`) — docker embedded DNS не умеет SRV; DC сам форвардит внешние запросы к AD_DNS_FORWARDER
 - **Секреты в `.env`** (gitignore): AD_ADMIN_PASSWORD, AD_JOIN_PASSWORD; шаблон — `.env.example`
-- **Готовые образы linuxserver.io** для Transmission и Plex; Samba-сервисы собираются кастомно из ubuntu:22.04
+- **Готовые образы linuxserver.io** для Transmission и Plex; Samba-сервисы собираются кастомно из ubuntu:26.04 LTS
 - **Конфиги шар Samba** — файлы в smb.conf.d, при старте run.sh генерирует [global] (домен) и приклеивает шары через cat (построчный while-read убран — манглил бэкслэши/пробелы)
 - **Автосинк ФС ↔ AD (home_sync.sh)** — фоновый цикл в member-контейнере (SYNC_INTERVAL, по умолч. 60с): доменный юзер без каталога → создаётся users/<u> (chown u:domain users, 0700); каталог без юзера в AD → архивируется в users/.deleted/<u>_<ts> (не rm — защита от ложного срабатывания при недоступном DC; гарды wbinfo -P/-u). Работает независимо от способа создания юзера (make user-add / RSAT / samba-tool напрямую)
 - **[homes] защищён** invalid users = root Administrator krbtgt Guest; встроенные учётки не получают шары
@@ -182,6 +182,7 @@ docker-compose.yml
 
 ## Recent Changes (по git-истории)
 - 2024+: sh-скрипты bash/ заменены на Makefile: user-add/user-del/user-pass/users (samba-tool) + env/up/down/logs/ps; README и память обновлены
+- 2024+: krb5-user в ubuntu:26.04 интерактивно спрашивает realm при apt install (debconf-диалог) — глушится ARG DEBIAN_FRONTEND=noninteractive + debconf-set-selections пресидами в обоих Dockerfile (значения неважны: krb5.conf генерится в run.sh)
 - 2024+: БАЗА ОБРАЗОВ: ubuntu 22.04 → 26.04 LTS (addc/folder/ftp + мёртвые plex/transmission Dockerfile); в DC добавлен samba-ad-provision; проверено: init.d smbd/winbind в resolute, rpc server port актуален, пакет в resolute-updates есть
 - 2024+: АУДИТ service_plex: compose-конфиг корректен; TZ параметризован через \${TZ} (plex+transmission); добавлены build-plex/build-transmission (pull готовых образов), build теперь и pull'ит; задокументировано: после remove-plex — повторная привязка plex.tv (PLEX_CLAIM) и пересборка библиотек
 - 2024+: Makefile расширен группами целей: up-*/down-*/build-*/remove-* (по каждому сервису dc/nas/plex/transmission); remove-* — полное удаление (контейнер+образ+volume+данные folders/, с подтверждением и CONFIRM=yes для обхода), чтобы prune не требовался
@@ -214,6 +215,7 @@ docker-compose.yml
 - Ничего из `folders/` не коммитить (gitignore); секреты — только в `.env` (тоже gitignore)
 
 ## Learnings and Project Insights
+- ⚠️ РЕАЛЬНЫЙ ДЕПЛОЙ: порт 53 на Ubuntu-хосте занят systemd-resolved (127.0.0.53+.54) — wildcard-бинг docker 0.0.0.0:53 конфликтует даже с loopback-слушателем. Лечение (задокументировано в README «Решение проблем»): DNSStubListener=no через drop-in + ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf + restart. Прошло на сервере
 - ⚠️ npm-пакет `ponytail` — НЕ официальный (чужой сквоттер); официальный — `@dietrichgebert/ponytail` / GitHub DietrichGebert/ponytail. У официала есть режимы lite/full/ultra/off + команды review/audit/debt/gain; у нас стоит сторонний lite-порт без режимов — при желании заменить на `pi install --local npm:@dietrichgebert/ponytail`
 - Порт 445 на хосте один — его держит файловый сервер; AD DC без 445 = работает всё кроме GPO/SYSVOL для Windows
 - Samba RPC dynamic ports зафиксирован на 49152 (smb.conf `rpc server port`), чтобы не публиковать диапазон 49152-65535

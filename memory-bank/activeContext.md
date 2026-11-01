@@ -38,6 +38,7 @@
 - Ничего из `folders/` не коммитить (gitignore); секреты — только в `.env` (тоже gitignore)
 
 ## Learnings and Project Insights
+- ⚠️ РЕАЛЬНЫЙ ДЕПЛОЙ: порт 53 на Ubuntu-хосте занят systemd-resolved (127.0.0.53+.54) — wildcard-бинг docker 0.0.0.0:53 конфликтует даже с loopback-слушателем. Лечение (задокументировано в README «Решение проблем»): DNSStubListener=no через drop-in + ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf + restart. Прошло на сервере
 - ⚠️ npm-пакет `ponytail` — НЕ официальный (чужой сквоттер); официальный — `@dietrichgebert/ponytail` / GitHub DietrichGebert/ponytail. У официала есть режимы lite/full/ultra/off + команды review/audit/debt/gain; у нас стоит сторонний lite-порт без режимов — при желании заменить на `pi install --local npm:@dietrichgebert/ponytail`
 - Порт 445 на хосте один — его держит файловый сервер; AD DC без 445 = работает всё кроме GPO/SYSVOL для Windows
 - Samba RPC dynamic ports зафиксирован на 49152 (smb.conf `rpc server port`), чтобы не публиковать диапазон 49152-65535
