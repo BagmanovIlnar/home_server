@@ -5,6 +5,7 @@
 
 ## Recent Changes (по git-истории)
 - 2024+: sh-скрипты bash/ заменены на Makefile: user-add/user-del/user-pass/users (samba-tool) + env/up/down/logs/ps; README и память обновлены
+- 2024+: krb5-user в ubuntu:26.04 интерактивно спрашивает realm при apt install (debconf-диалог) — глушится ARG DEBIAN_FRONTEND=noninteractive + debconf-set-selections пресидами в обоих Dockerfile (значения неважны: krb5.conf генерится в run.sh)
 - 2024+: БАЗА ОБРАЗОВ: ubuntu 22.04 → 26.04 LTS (addc/folder/ftp + мёртвые plex/transmission Dockerfile); в DC добавлен samba-ad-provision; проверено: init.d smbd/winbind в resolute, rpc server port актуален, пакет в resolute-updates есть
 - 2024+: АУДИТ service_plex: compose-конфиг корректен; TZ параметризован через \${TZ} (plex+transmission); добавлены build-plex/build-transmission (pull готовых образов), build теперь и pull'ит; задокументировано: после remove-plex — повторная привязка plex.tv (PLEX_CLAIM) и пересборка библиотек
 - 2024+: Makefile расширен группами целей: up-*/down-*/build-*/remove-* (по каждому сервису dc/nas/plex/transmission); remove-* — полное удаление (контейнер+образ+volume+данные folders/, с подтверждением и CONFIRM=yes для обхода), чтобы prune не требовался
