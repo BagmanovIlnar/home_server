@@ -33,8 +33,8 @@
 - vstavrinov/acestream-engine (для отключённого ace-stream; образ сейчас не собирается — отсутствуют файлы контекста)
 
 ## Tool Usage Patterns
-- `bash/add_user.sh -u <user> -p <pass>` — доменный юзер (samba-tool) + домашний каталог с chown HOME\user
-- `bash/del_user.sh -u <user>` — удалить юзера и каталог
-- `bash/ad_set_password.sh -u <user> -p <pass>` / `bash/ad_list_users.sh` — пароли/список
-- Управление сервисами — `docker compose` (up/down/logs/build); при `down/up` member сам переjoin'ится — это штатно
+- `make help` — справка; `make user-add U=<user> P=<pass>` — доменный юзер + домашний каталог (chown DOMAIN\user, 0700, с ожиданием видимости в winbind)
+- `make user-del U=<user>` / `make user-pass U= P=` / `make users` — удаление/пароль/список
+- `make env` / `up` / `down` / `logs` / `ps` — жизненный цикл стека (Makefile в корне)
+- Управление руками: `docker compose ...`; при down/up member сам переjoin'ится — штатно
 - Диагностика домена: `docker exec service_samba_addc samba-tool dns query localhost HOME.ARPA @ ALL -U administrator`

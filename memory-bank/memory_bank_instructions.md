@@ -45,5 +45,5 @@ flowchart TD
 
 ## Core Workflows проекта (для быстрого старта)
 - Полный перезапуск: `docker compose up -d --build`
-- Новый пользователь Samba: `bash/add_user.sh -u <user> -p <pass>`
+- Новый пользователь: `make user-add U=<user> P=<pass>`; удаление: `make user-del U=<user>`; справка: `make help`
 - Удаление пользователя: `bash/del_user.sh -u <user>`

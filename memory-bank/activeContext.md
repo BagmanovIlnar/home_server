@@ -4,6 +4,7 @@
 **Внедрение Active Directory (реализовано, ожидает развёртывания на сервере).** Добавлен Samba AD DC (`service_samba_addc`) + файловый сервер переведён из standalone в member домена. Единая аутентификация для Linux/Windows/macOS через домен HOME.ARPA (настраивается в .env).
 
 ## Recent Changes (по git-истории)
+- 2024+: sh-скрипты bash/ заменены на Makefile: user-add/user-del/user-pass/users (samba-tool) + env/up/down/logs/ps; README и память обновлены
 - 2024+: АУДИТ samba_folder + автосинк ФС↔AD: новый home_sync.sh (авто-создание/архивация домашних каталогов по состоянию AD), исправлены баги: while-read-манглилг в run.sh → cat; add_user.sh — set -e + ожидание видимости юзера в winbind (гонка кэша) + парсинг .env от каталога скрипта; del_user.sh — set -e (ФС не трогаем при ошибке AD); [homes] — invalid users для встроенных учёток
 - 2024+: добавлен проектный скил `.agents/skills/ponytail-lite/` (Lazy Senior Dev — «лестница лени» против over-engineering, порт MIT-скила ilindaniel/ponytail-lite с доп. правилами под home_server). Работает только для этого проекта: pi сканирует `.agents/skills/` автоматически; принудительно — команда `/skill:ponytail-lite`
 - 2024+: РЕАЛИЗОВАН Active Directory: новый сервис `service_samba_addc` (Dockerfile + run.sh с provisioning домена), `service_samba_folder` переведён на security=ads + winbind + rid-idmap, сеть network_service получила subnet 172.28.0.0/24, добавлены `.env.example`/`.env` (секреты), скрипты `bash/add_user.sh`/`del_user.sh` переписаны под samba-tool, новые `ad_set_password.sh`/`ad_list_users.sh`, README переписан
@@ -13,13 +14,12 @@
 - `7247437/af78fa6` init home server — начальная инициализация
 
 ## Next Steps (потенциальные)
-- [ ] РАЗВЕРНУТЬ AD на живом сервере: `cp .env.example .env` (пароли!), `docker compose up -d --build`; убедиться что порт 53 хоста свободен (dnsmasq/AdGuard конфликт)
+- [ ] РАЗВЕРНУТЬ AD на живом сервере: `make env` (пароли!), `make up`; убедиться что порт 53 хоста свободен (dnsmasq/AdGuard конфликт)
 - [ ] Настроить DHCP роутера: DNS = IP сервера (иначе клиенты не найдут домен по SRV)
-- [ ] Пересоздать пользователей через новый `bash/add_user.sh` (локальные юзеры старого samba в AD не переехали)
+- [ ] Пересоздать пользователей через `make user-add` (локальные юзеры старого samba в AD не переехали)
 - [ ] Проверить вход в домен с Windows Pro / macOS / Linux (sssd), доступ к шарам `HOME\\user`
 - Решить судьбу отключённых сервисов: ace_stream (образ сейчас не собирается — в Dockerfile упоминаются отсутствующие файлы `search.py`, `default.conf`, `nginx.conf`, `setup.cfg`) и ftp (vsftpd)
-- Автоматизировать восстановление пользователей Samba (сейчас после пересоздания контейнера надо вручную гонять `add_user.sh`)
-- Придумать безопасный способ передачи паролей в `add_user.sh` (сейчас пароль в аргументе командной строки)
+- Придумать безопасный способ передачи паролей в make user-add (сейчас пароль в аргументе командной строки; в паролях нельзя символ $)
 - Рассмотреть бэкап `folders/plex_media_server/library` и конфигов Transmission
 - Вернуть авторизацию или ограничить доступ к Transmission, если сеть перестанет быть доверенной
 

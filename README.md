@@ -17,21 +17,21 @@
 ## Первый запуск
 
 ```bash
-cp .env.example .env
-# отредактируй .env: пароли (сложные: 3 класса символов, от 7 симв.), DNS-форвардер (обычно IP роутера)
-docker compose up -d --build
-docker compose logs -f service_samba_addc   # ждать "provisioned" + healthcheck
+make env    # создаст .env из шаблона — пропиши пароли (3 класса символов, от 7)
+make up     # сборка + запуск
+make logs   # ждать "provisioned" у service_samba_addc и статуса healthy
 ```
 
 Первый старт DC создаёт домен и пишет базу в `folders/samba_addc/` (персистентна). Файловый сервер сам вводится в домен при каждом старте — это штатно.
 
-## Пользователи
+## Управление и пользователи (make)
 
 ```bash
-bash/add_user.sh -u ivan -p 'Str0ng_Pass!'   # создать доменного юзера + домашний каталог
-bash/del_user.sh -u ivan                     # удалить
-bash/ad_set_password.sh -u ivan -p 'New_Pass!' 
-bash/ad_list_users.sh                        # список
+make user-add U=ivan P='Str0ng_Pass!'   # создать доменного юзера + домашний каталог
+make user-del U=ivan                    # удалить юзера и каталог
+make user-pass U=ivan P='New_Pass!'     # сменить пароль
+make users                              # список юзеров домена
+make ps / logs / down                   # жизненный цикл стека
 ```
 
 Доступ к персональной шаре: `\\<IP-сервера>\ivan`, логин `HOME\ivan`.

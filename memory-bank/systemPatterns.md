@@ -31,7 +31,7 @@ docker-compose.yml
 - **Секреты в `.env`** (gitignore): AD_ADMIN_PASSWORD, AD_JOIN_PASSWORD; шаблон — `.env.example`
 - **Готовые образы linuxserver.io** для Transmission и Plex; Samba-сервисы собираются кастомно из ubuntu:22.04
 - **Конфиги шар Samba** — файлы в smb.conf.d, при старте run.sh генерирует [global] (домен) и приклеивает шары через cat (построчный while-read убран — манглил бэкслэши/пробелы)
-- **Автосинк ФС ↔ AD (home_sync.sh)** — фоновый цикл в member-контейнере (SYNC_INTERVAL, по умолч. 60с): доменный юзер без каталога → создаётся users/<u> (chown u:domain users, 0700); каталог без юзера в AD → архивируется в users/.deleted/<u>_<ts> (не rm — защита от ложного срабатывания при недоступном DC; гарды wbinfo -P/-u). Работает независимо от способа создания юзера (add_user.sh / RSAT / samba-tool напрямую)
+- **Автосинк ФС ↔ AD (home_sync.sh)** — фоновый цикл в member-контейнере (SYNC_INTERVAL, по умолч. 60с): доменный юзер без каталога → создаётся users/<u> (chown u:domain users, 0700); каталог без юзера в AD → архивируется в users/.deleted/<u>_<ts> (не rm — защита от ложного срабатывания при недоступном DC; гарды wbinfo -P/-u). Работает независимо от способа создания юзера (make user-add / RSAT / samba-tool напрямую)
 - **[homes] защищён** invalid users = root Administrator krbtgt Guest; встроенные учётки не получают шары
 - **Данные отделены от контейнеров** — всё в `folders/`, каталог в `.gitignore`
 
@@ -50,7 +50,8 @@ docker-compose.yml
 - `docker-compose.yml` — сервисы, порты, subnet 172.28.0.0/24, .env-переменные
 - `services/samba_addc/run.sh` — provisioning домена при первом старте, `exec samba -i`
 - `services/samba_folder/run.sh` — генерация krb5.conf/smb.conf (member), авто-join, winbind+smbd
-- `bash/add_user.sh` / `del_user.sh` / `ad_set_password.sh` / `ad_list_users.sh` — жизненный цикл доменных юзеров
+- `bash/add_user.sh` / `del_user.sh` → ЗАМЕНЕНЫ на Makefile: цели user-add/user-del/user-pass/users + env/up/down/logs/ps
+- `services/samba_folder/run.sh` — генерация krb5.conf/smb.conf (member), авто-join, winbind+smbd
 - `.env` — секреты и параметры домена (НЕ коммитить)
 
 ## Известные проблемы / подводные камни

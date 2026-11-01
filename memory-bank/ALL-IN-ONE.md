@@ -14,7 +14,7 @@
 ## Core Requirements
 - **Active Directory (Samba AD DC)**: домен HOME.ARPA (DNS+Kerberos+LDAP), единые учётки для Linux/Windows/macOS
 - Файловый сервер Samba (member домена): общая шара `home_share` (гостевой доступ) + персональные домашние каталоги доменных пользователей
-- Управление пользователями через shell-скрипты (`bash/add_user.sh` = samba-tool, и др.)
+- Управление пользователями и стеком через Makefile (`make user-add` = samba-tool, `make up/logs/ps` = docker compose)
 - торрент-клиент Transmission с веб-интерфейсом (порт 9091) и watcher-каталогом для .torrent файлов
 - Медиасервер Plex (порт 32400) с библиотекой, фильмами и сериалами
 - Все данные (загрузки, медиа, конфиги) вынесены в `folders/` на хосте и переживают пересоздание контейнеров
@@ -39,7 +39,7 @@
 Нужен единый домашний сервер для семьи: общее файловое хранилище с разных устройств (ПК, ТВ, телефоны), автоматическая загрузка торрентов и удобный просмотр медиа (фильмы/сериалы) на любых клиентах. Ручная установка и настройка каждого сервиса на хосте неудобна и непереносима.
 
 ## Как это работает (пользовательский сценарий)
-- Пользователь подключается к `\\<server>\home_share` без пароля для обмена файлами; у каждого пользователя есть личный каталог `\\<server>\<username>` с паролем (создаётся через `add_user.sh`)
+- Пользователь подключается к `\\<server>\home_share` без пароля для обмена файлами; у каждого пользователя есть личный каталог `\\<server>\<username>` с паролем (создаётся через `make user-add`)
 - .torrent-файлы, положенные в watch-каталог Transmission, автоматически скачиваются в `folders/transmission/downloads`
 - Загруженные фильмы/сериалы перемещаются в `folders/plex_media_server/movies` и `tvseries`, после чего появляются в библиотеке Plex и доступны на ТВ/телефоне/браузере
 
@@ -93,7 +93,7 @@ docker-compose.yml
 - **Секреты в `.env`** (gitignore): AD_ADMIN_PASSWORD, AD_JOIN_PASSWORD; шаблон — `.env.example`
 - **Готовые образы linuxserver.io** для Transmission и Plex; Samba-сервисы собираются кастомно из ubuntu:22.04
 - **Конфиги шар Samba** — файлы в smb.conf.d, при старте run.sh генерирует [global] (домен) и приклеивает шары через cat (построчный while-read убран — манглил бэкслэши/пробелы)
-- **Автосинк ФС ↔ AD (home_sync.sh)** — фоновый цикл в member-контейнере (SYNC_INTERVAL, по умолч. 60с): доменный юзер без каталога → создаётся users/<u> (chown u:domain users, 0700); каталог без юзера в AD → архивируется в users/.deleted/<u>_<ts> (не rm — защита от ложного срабатывания при недоступном DC; гарды wbinfo -P/-u). Работает независимо от способа создания юзера (add_user.sh / RSAT / samba-tool напрямую)
+- **Автосинк ФС ↔ AD (home_sync.sh)** — фоновый цикл в member-контейнере (SYNC_INTERVAL, по умолч. 60с): доменный юзер без каталога → создаётся users/<u> (chown u:domain users, 0700); каталог без юзера в AD → архивируется в users/.deleted/<u>_<ts> (не rm — защита от ложного срабатывания при недоступном DC; гарды wbinfo -P/-u). Работает независимо от способа создания юзера (make user-add / RSAT / samba-tool напрямую)
 - **[homes] защищён** invalid users = root Administrator krbtgt Guest; встроенные учётки не получают шары
 - **Данные отделены от контейнеров** — всё в `folders/`, каталог в `.gitignore`
 
@@ -112,7 +112,8 @@ docker-compose.yml
 - `docker-compose.yml` — сервисы, порты, subnet 172.28.0.0/24, .env-переменные
 - `services/samba_addc/run.sh` — provisioning домена при первом старте, `exec samba -i`
 - `services/samba_folder/run.sh` — генерация krb5.conf/smb.conf (member), авто-join, winbind+smbd
-- `bash/add_user.sh` / `del_user.sh` / `ad_set_password.sh` / `ad_list_users.sh` — жизненный цикл доменных юзеров
+- `bash/add_user.sh` / `del_user.sh` → ЗАМЕНЕНЫ на Makefile: цели user-add/user-del/user-pass/users + env/up/down/logs/ps
+- `services/samba_folder/run.sh` — генерация krb5.conf/smb.conf (member), авто-join, winbind+smbd
 - `.env` — секреты и параметры домена (НЕ коммитить)
 
 ## Известные проблемы / подводные камни
@@ -162,10 +163,10 @@ docker-compose.yml
 - vstavrinov/acestream-engine (для отключённого ace-stream; образ сейчас не собирается — отсутствуют файлы контекста)
 
 ## Tool Usage Patterns
-- `bash/add_user.sh -u <user> -p <pass>` — доменный юзер (samba-tool) + домашний каталог с chown HOME\user
-- `bash/del_user.sh -u <user>` — удалить юзера и каталог
-- `bash/ad_set_password.sh -u <user> -p <pass>` / `bash/ad_list_users.sh` — пароли/список
-- Управление сервисами — `docker compose` (up/down/logs/build); при `down/up` member сам переjoin'ится — это штатно
+- `make help` — справка; `make user-add U=<user> P=<pass>` — доменный юзер + домашний каталог (chown DOMAIN\user, 0700, с ожиданием видимости в winbind)
+- `make user-del U=<user>` / `make user-pass U= P=` / `make users` — удаление/пароль/список
+- `make env` / `up` / `down` / `logs` / `ps` — жизненный цикл стека (Makefile в корне)
+- Управление руками: `docker compose ...`; при down/up member сам переjoin'ится — штатно
 - Диагностика домена: `docker exec service_samba_addc samba-tool dns query localhost HOME.ARPA @ ALL -U administrator`
 
 ---
@@ -178,6 +179,7 @@ docker-compose.yml
 **Внедрение Active Directory (реализовано, ожидает развёртывания на сервере).** Добавлен Samba AD DC (`service_samba_addc`) + файловый сервер переведён из standalone в member домена. Единая аутентификация для Linux/Windows/macOS через домен HOME.ARPA (настраивается в .env).
 
 ## Recent Changes (по git-истории)
+- 2024+: sh-скрипты bash/ заменены на Makefile: user-add/user-del/user-pass/users (samba-tool) + env/up/down/logs/ps; README и память обновлены
 - 2024+: АУДИТ samba_folder + автосинк ФС↔AD: новый home_sync.sh (авто-создание/архивация домашних каталогов по состоянию AD), исправлены баги: while-read-манглилг в run.sh → cat; add_user.sh — set -e + ожидание видимости юзера в winbind (гонка кэша) + парсинг .env от каталога скрипта; del_user.sh — set -e (ФС не трогаем при ошибке AD); [homes] — invalid users для встроенных учёток
 - 2024+: добавлен проектный скил `.agents/skills/ponytail-lite/` (Lazy Senior Dev — «лестница лени» против over-engineering, порт MIT-скила ilindaniel/ponytail-lite с доп. правилами под home_server). Работает только для этого проекта: pi сканирует `.agents/skills/` автоматически; принудительно — команда `/skill:ponytail-lite`
 - 2024+: РЕАЛИЗОВАН Active Directory: новый сервис `service_samba_addc` (Dockerfile + run.sh с provisioning домена), `service_samba_folder` переведён на security=ads + winbind + rid-idmap, сеть network_service получила subnet 172.28.0.0/24, добавлены `.env.example`/`.env` (секреты), скрипты `bash/add_user.sh`/`del_user.sh` переписаны под samba-tool, новые `ad_set_password.sh`/`ad_list_users.sh`, README переписан
@@ -187,13 +189,12 @@ docker-compose.yml
 - `7247437/af78fa6` init home server — начальная инициализация
 
 ## Next Steps (потенциальные)
-- [ ] РАЗВЕРНУТЬ AD на живом сервере: `cp .env.example .env` (пароли!), `docker compose up -d --build`; убедиться что порт 53 хоста свободен (dnsmasq/AdGuard конфликт)
+- [ ] РАЗВЕРНУТЬ AD на живом сервере: `make env` (пароли!), `make up`; убедиться что порт 53 хоста свободен (dnsmasq/AdGuard конфликт)
 - [ ] Настроить DHCP роутера: DNS = IP сервера (иначе клиенты не найдут домен по SRV)
-- [ ] Пересоздать пользователей через новый `bash/add_user.sh` (локальные юзеры старого samba в AD не переехали)
+- [ ] Пересоздать пользователей через `make user-add` (локальные юзеры старого samba в AD не переехали)
 - [ ] Проверить вход в домен с Windows Pro / macOS / Linux (sssd), доступ к шарам `HOME\\user`
 - Решить судьбу отключённых сервисов: ace_stream (образ сейчас не собирается — в Dockerfile упоминаются отсутствующие файлы `search.py`, `default.conf`, `nginx.conf`, `setup.cfg`) и ftp (vsftpd)
-- Автоматизировать восстановление пользователей Samba (сейчас после пересоздания контейнера надо вручную гонять `add_user.sh`)
-- Придумать безопасный способ передачи паролей в `add_user.sh` (сейчас пароль в аргументе командной строки)
+- Придумать безопасный способ передачи паролей в make user-add (сейчас пароль в аргументе командной строки; в паролях нельзя символ $)
 - Рассмотреть бэкап `folders/plex_media_server/library` и конфигов Transmission
 - Вернуть авторизацию или ограничить доступ к Transmission, если сеть перестанет быть доверенной
 
@@ -225,7 +226,7 @@ docker-compose.yml
 ## What Works
 - ✅ **Samba AD DC** (service_samba_addc): новый сервис — домен-контроллер (DNS+Kerberos+LDAP+GC), provisioning при первом старте, база персистентна в folders/samba_addc/, healthcheck через SRV-запрос; ФИЗИЧЕСКИ НЕ РАЗВЁРНУТ на сервере — код написан, ждёт docker compose up
 - ✅ **Файловый сервер в домене** (service_samba_folder): security=ads, winbind, rid-idmap, авто-join при старте; шары home_share + [homes] для доменных юзеров; АВТОСИНК домашних каталогов с AD (home_sync.sh): создание при появлении юзера, архивация в .deleted при удалении
-- ✅ **Управление пользователями AD**: add_user.sh / del_user.sh (samba-tool) + ad_set_password.sh + ad_list_users.sh
+- ✅ **Управление (Makefile)**: user-add/user-del/user-pass/users + env/up/down/logs/ps (заменили bash/*.sh)
 - ~~✅ Управление пользователями: `bash/add_user.sh` (useradd + smbpasswd + каталог с правами 775), `bash/del_user.sh`~~ → заменено на доменные учётки через samba-tool
 - ✅ **Transmission** (linuxserver): web-UI на 9091 без авторизации, peer-порт 51413, watch-папка `folders/transmission/torrents`, загрузки в `folders/transmission/downloads`
 - ✅ **Plex** (linuxserver): порт 32400, библиотека/фильмы/сериалы в `folders/plex_media_server/`, активирован (PLEX_CLAIM больше не нужен)
@@ -243,7 +244,7 @@ docker-compose.yml
 ## Known Issues and Limitations
 - ⚠️ AD DC не публикует порт 445 (его занимает файловый сервер): Windows-клиенты не получают GPO/SYSVOL; вход/логин/аутентификация работают
 - ⚠️ Порт 53 хоста должен быть свободен для DC DNS (конфликт с dnsmasq/AdGuard/Pi-hole)
-- ⚠️ Локальные юзеры старого standalone-samba НЕ мигрировали в AD — пересоздать через add_user.sh
+- ⚠️ Локальные юзеры старого standalone-samba НЕ мигрировали в AD — пересоздать через make user-add
 - ⚠️ Windows Home в домен не входит (нужна Pro/Enterprise); Plex/Transmission AD не поддерживают
 - ⚠️ Transmission web-UI без аутентификации — безопасно только в доверенной LAN
 - ⚠️ Лишние/мёртвые файлы: Dockerfile+run.sh для plex и transmission не используются (compose берёт linuxserver-образы); старая закомментированная секция в ace-stream Dockerfile
@@ -309,6 +310,6 @@ flowchart TD
 
 ## Core Workflows проекта (для быстрого старта)
 - Полный перезапуск: `docker compose up -d --build`
-- Новый пользователь Samba: `bash/add_user.sh -u <user> -p <pass>`
+- Новый пользователь: `make user-add U=<user> P=<pass>`; удаление: `make user-del U=<user>`; справка: `make help`
 - Удаление пользователя: `bash/del_user.sh -u <user>`
 

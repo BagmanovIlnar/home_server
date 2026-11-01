@@ -6,7 +6,7 @@
 ## Core Requirements
 - **Active Directory (Samba AD DC)**: домен HOME.ARPA (DNS+Kerberos+LDAP), единые учётки для Linux/Windows/macOS
 - Файловый сервер Samba (member домена): общая шара `home_share` (гостевой доступ) + персональные домашние каталоги доменных пользователей
-- Управление пользователями через shell-скрипты (`bash/add_user.sh` = samba-tool, и др.)
+- Управление пользователями и стеком через Makefile (`make user-add` = samba-tool, `make up/logs/ps` = docker compose)
 - торрент-клиент Transmission с веб-интерфейсом (порт 9091) и watcher-каталогом для .torrent файлов
 - Медиасервер Plex (порт 32400) с библиотекой, фильмами и сериалами
 - Все данные (загрузки, медиа, конфиги) вынесены в `folders/` на хосте и переживают пересоздание контейнеров

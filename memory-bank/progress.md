@@ -3,7 +3,7 @@
 ## What Works
 - ✅ **Samba AD DC** (service_samba_addc): новый сервис — домен-контроллер (DNS+Kerberos+LDAP+GC), provisioning при первом старте, база персистентна в folders/samba_addc/, healthcheck через SRV-запрос; ФИЗИЧЕСКИ НЕ РАЗВЁРНУТ на сервере — код написан, ждёт docker compose up
 - ✅ **Файловый сервер в домене** (service_samba_folder): security=ads, winbind, rid-idmap, авто-join при старте; шары home_share + [homes] для доменных юзеров; АВТОСИНК домашних каталогов с AD (home_sync.sh): создание при появлении юзера, архивация в .deleted при удалении
-- ✅ **Управление пользователями AD**: add_user.sh / del_user.sh (samba-tool) + ad_set_password.sh + ad_list_users.sh
+- ✅ **Управление (Makefile)**: user-add/user-del/user-pass/users + env/up/down/logs/ps (заменили bash/*.sh)
 - ~~✅ Управление пользователями: `bash/add_user.sh` (useradd + smbpasswd + каталог с правами 775), `bash/del_user.sh`~~ → заменено на доменные учётки через samba-tool
 - ✅ **Transmission** (linuxserver): web-UI на 9091 без авторизации, peer-порт 51413, watch-папка `folders/transmission/torrents`, загрузки в `folders/transmission/downloads`
 - ✅ **Plex** (linuxserver): порт 32400, библиотека/фильмы/сериалы в `folders/plex_media_server/`, активирован (PLEX_CLAIM больше не нужен)
@@ -21,7 +21,7 @@
 ## Known Issues and Limitations
 - ⚠️ AD DC не публикует порт 445 (его занимает файловый сервер): Windows-клиенты не получают GPO/SYSVOL; вход/логин/аутентификация работают
 - ⚠️ Порт 53 хоста должен быть свободен для DC DNS (конфликт с dnsmasq/AdGuard/Pi-hole)
-- ⚠️ Локальные юзеры старого standalone-samba НЕ мигрировали в AD — пересоздать через add_user.sh
+- ⚠️ Локальные юзеры старого standalone-samba НЕ мигрировали в AD — пересоздать через make user-add
 - ⚠️ Windows Home в домен не входит (нужна Pro/Enterprise); Plex/Transmission AD не поддерживают
 - ⚠️ Transmission web-UI без аутентификации — безопасно только в доверенной LAN
 - ⚠️ Лишние/мёртвые файлы: Dockerfile+run.sh для plex и transmission не используются (compose берёт linuxserver-образы); старая закомментированная секция в ace-stream Dockerfile

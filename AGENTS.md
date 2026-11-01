@@ -10,6 +10,6 @@
 - Перед началом ЛЮБОЙ задачи прочитай все файлы Memory Bank в `memory-bank/`
 - После значимых изменений обновляй `memory-bank/activeContext.md` и `memory-bank/progress.md`
 - Ничего из `folders/` и `.env` не коммитить (там данные и секреты)
-- Пользователи домена — только через `bash/add_user.sh` / `bash/del_user.sh` (samba-tool)
+- Пользователи домена — только через `make user-add` / `make user-del` (samba-tool, см. Makefile)
 - Сервисы ace-stream и ftp в docker-compose.yml закомментированы — они НЕ активны
 - Ответы и документация — на русском
