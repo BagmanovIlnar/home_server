@@ -24,15 +24,30 @@ make logs   # ждать "provisioned" у service_samba_addc и статуса h
 
 Первый старт DC создаёт домен и пишет базу в `folders/samba_addc/` (персистентна). Файловый сервер сам вводится в домен при каждом старте — это штатно.
 
-## Управление и пользователи (make)
+## Управление и пользователи (make help — полная справка)
 
 ```bash
-make user-add U=ivan P='Str0ng_Pass!'   # создать доменного юзера + домашний каталог
-make user-del U=ivan                    # удалить юзера и каталог
-make user-pass U=ivan P='New_Pass!'     # сменить пароль
-make users                              # список юзеров домена
-make ps / logs / down                   # жизненный цикл стека
+# запуск / остановка / сборка (как всего стека, так и по одному сервису: up-dc, up-nas, up-plex, up-transmission)
+make up / down / build            # весь стек (down = только остановка, данные живы)
+make up-nas / down-nas / build-dc # конкретный сервис
+
+# ПОЛНОЕ удаление: контейнер + образ + volume + ВСЕ данные сервиса (prune не нужен)
+make remove                        # весь стек (образы, volume, сеть, все folders/)
+make remove-dc                     # + база домена (все юзеры AD!)
+make remove-nas                    # + все домашние каталоги и общая шара
+make remove-transmission           # + все загрузки
+make remove-plex                   # + медиатека
+
+# пользователи домена
+make user-add U=ivan P='Str0ng_Pass!'
+make user-del U=ivan
+make user-pass U=ivan P='New_Pass!'
+make users
+
+make ps / logs
 ```
+
+⚠️ `remove-*` запрашивает подтверждение (обойти: `make remove-<x> CONFIRM=yes`) и удаляет данные БЕЗВОЗВРАТНО — образ, контейнер, анонимные volume и соответствующие каталоги в `folders/`. Остались git-заглушки `.gitignore`, чтобы структура репо не поехала.
 
 Доступ к персональной шаре: `\\<IP-сервера>\ivan`, логин `HOME\ivan`.
 Смена пароля Administrator: `docker exec -it service_samba_addc samba-tool user setpassword Administrator`.

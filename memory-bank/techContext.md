@@ -35,6 +35,8 @@
 ## Tool Usage Patterns
 - `make help` — справка; `make user-add U=<user> P=<pass>` — доменный юзер + домашний каталог (chown DOMAIN\user, 0700, с ожиданием видимости в winbind)
 - `make user-del U=<user>` / `make user-pass U= P=` / `make users` — удаление/пароль/список
-- `make env` / `up` / `down` / `logs` / `ps` — жизненный цикл стека (Makefile в корне)
+- `make env` / `up[-dc|nas|plex|transmission]` / `down[-...]` — запуск/остановка (всего стека или по сервису; down = только stop, данные живы)
+- `make build[-dc|nas]` — сборка кастомных образов
+- `make remove[-dc|nas|plex|transmission]` — ПОЛНОЕ удаление: контейнер + образ + анонимные volume + данные в folders/ (rm -rf с восстановлением git-заглушек .gitignore); подтверждение через read, обход — CONFIRM=yes; цель — чтобы docker prune был не нужен
 - Управление руками: `docker compose ...`; при down/up member сам переjoin'ится — штатно
 - Диагностика домена: `docker exec service_samba_addc samba-tool dns query localhost HOME.ARPA @ ALL -U administrator`
