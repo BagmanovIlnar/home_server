@@ -1,6 +1,6 @@
 # Home Server
 
-Домашний сервер на Docker Compose: **Active Directory (Samba AD DC)** + файловый сервер (Samba) + media-стек: **qBittorrent → Radarr/Sonarr/Lidarr → Jellyfin** + медиасервер **Plex**, Telegram-прокси, Docker Registry и Vaultwarden (пароли).
+Домашний сервер на Docker Compose: **Active Directory (Samba AD DC)** + файловый сервер (Samba) + media-стек: **qBittorrent → Radarr/Sonarr/Lidarr (+Bazarr) → Jellyfin** + медиасервер **Plex**, Ace Stream, MeTube (видео с YouTube), Telegram-прокси, Docker Registry, Vaultwarden (пароли) и SearXNG (поиск).
 
 Единая аутентификация для **Linux, Windows, macOS** через собственный домен `HOME.ARPA`.
 
@@ -47,7 +47,7 @@ make logs   # ждать "provisioned" у service_samba_addc и статуса h
 
 Первый старт DC создаёт домен и пишет базу в `folders/samba_addc/` (персистентна). Файловый сервер сам вводится в домен при каждом старте — это штатно.
 
-В `.env` есть и опциональные переменные (см. соответствующие разделы): `TG_WS_PROXY_SECRET` (Telegram-прокси), `SIGNUPS_ALLOWED` / `ADMIN_TOKEN` (Vaultwarden) — их можно заполнить позже.
+В `.env` есть и опциональные переменные (см. соответствующие разделы): `TG_WS_PROXY_SECRET` (Telegram-прокси), `SIGNUPS_ALLOWED` / `ADMIN_TOKEN` (Vaultwarden), `SEARXNG_BASE_URL` (SearXNG) — их можно заполнить позже.
 
 ## Управление и пользователи (make help — полная справка)
 
@@ -330,7 +330,7 @@ echo "nameserver 192.168.1.1" | sudo tee /etc/resolv.conf    # IP твоего �
 
 - **Порт 445 занят файловым сервером**, DC его не публикует → Windows-клиенты не получают GPO/SYSVOL (групповые политики). Вход в домен, логин, аутентификация — работают. Если нужны GPO — переноси шары на DC.
 - **Порт 53 на хосте** должен быть свободен (конфликт с dnsmasq/AdGuard/Pi-hole, systemd-resolved обычно не мешает).
-- Все сервисы вне Samba (Plex, Jellyfin, qBittorrent и *arr, Vaultwarden, registry, Telegram-прокси) **не интегрируются с AD** — у них свои локальные аккаунты.
+- Все сервисы вне Samba (Plex, Jellyfin, qBittorrent, *arr, Vaultwarden, registry, Telegram-прокси, Ace Stream, MeTube, SearXNG) **не интегрируются с AD** — у них свои локальные аккаунты или их нет.
 - Машина-аккаунт файлового сервера пересоздаётся при `docker compose down/up` (автоматически, штатно).
 - **Бэкапить**: `folders/samba_addc/` (домен) и `folders/vaultwarden/` (все пароли) — потеря безвозвратна.
 
