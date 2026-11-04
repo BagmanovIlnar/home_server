@@ -21,7 +21,7 @@
 | `service_registry` | Docker Registry — хранилище собственных образов | 5000 |
 | `service_vaultwarden` | Vaultwarden — пароли (Bitwarden-совместимый сервер) | 8222 |
 | `service_acestream` | Ace Stream Engine 3.2.11 — p2p-стриминг | 6878 |
-| `service_metube` | MeTube — загрузка видео с YouTube и 100+ сайтов (yt-dlp) | 8081 |
+| `service_metube` | MeTube — загрузка видео с YouTube и 100+ сайтов (yt-dlp) → /media/youtube | 8081 |
 | `service_searxng` | SearXNG — приватный метапоисковик | 8888 |
 | ~~service_ftp~~ | Отключён (закомментирован) | — |
 
@@ -32,6 +32,7 @@
 ```
 qBittorrent (/downloads) ──качает──▶ Radarr/Sonarr/Lidarr ──импортируют──▶ /media/{movies,tv,music} ──▶ Jellyfin (авто) + Plex (после п.4)
                                         └─ Bazarr: субтитры к /media/{movies,tv}
+MeTube (:8081, yt-dlp) ──────────────────────────────────▶ /media/youtube ──▶ Jellyfin/Plex (после п.5)
 ```
 
 Разовая настройка — в разделе «Настройка media-стека» ниже.
@@ -165,6 +166,10 @@ Plex подключён к той же медиатеке (`/media` = `folders/m
 
 (Старые каталоги `/movies`, `/tv` из `folders/plex_media_server/` остаются подключёнными как есть.)
 
+### Шаг 5. MeTube — видео с YouTube в той же медиатеке
+
+MeTube уже пишет в `/media/youtube`. Добавь библиотеку в Jellyfin (и при желании в Plex): тип контента **Home Videos**, папка `/media/youtube` — случайные названия с YouTube не будут портиться метаданными.
+
 ## Docker Registry (хранилище собственных образов)
 
 Поднят `registry:2` (порт 5000, данные в `folders/registry/`) — вместо тяжёлого Harbor: тот требует ~10 контейнеров (БД, redis, trivy), свой установщик и HTTPS-сертификаты. Если понадобятся UI/сканирование/репликация — Harbor ставится отдельным проектом по [официальной инструкции](https://goharbor.io/docs/2.12.0/install-config/).
@@ -230,7 +235,9 @@ Bitwarden-совместимый сервер (lscr.io/linuxserver/vaultwarden),
 
 ## MeTube (загрузка видео)
 
-Web-UI для yt-dlp (`alexta69/metube`), порт `8081`. Вставляешь ссылку с YouTube/[сотен сайтов](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md) — видео качается в `folders/metube/downloads` (в медиатеку Jellyfin/Plex — переносом вручную или настрой `OUTPUT_TEMPLATE` в compose).
+Web-UI для yt-dlp (`alexta69/metube`), порт `8081`. Вставляешь ссылку с YouTube/[сотен сайтов](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md) — видео качается **сразу в общую медиатеку** `folders/media/youtube`.
+
+Чтобы видео появились в Jellyfin: Dashboard → Libraries → добавить библиотеку `/media/youtube` с типом контента **Home Videos** (заодно в Plex — `/media/youtube`). Дальше новые загрузки подхватываются автоматическим сканом, ничего вручную.
 
 Basic-авторизация (если в LAN есть посторонние): раскомментируй `USER`/`PASS` в docker-compose.yml → `make up-metube`.
 

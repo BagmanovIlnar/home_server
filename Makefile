@@ -121,12 +121,12 @@ remove: ## !!! удалить ВЕСЬ стек: контейнеры, обра�
 	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить ВЕСЬ стек БЕЗВОЗВРАТНО (контейнеры, образы, volume, данные)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
 	docker compose down --rmi all --volumes --remove-orphans
 	rm -rf folders/samba_addc folders/users folders/share folders/transmission folders/plex_media_server \
-	  folders/qbittorrent folders/radarr folders/sonarr folders/lidarr folders/bazarr folders/jellyfin folders/media folders/registry folders/vaultwarden folders/acestream folders/metube folders/searxng
+	  folders/qbittorrent folders/radarr folders/sonarr folders/lidarr folders/bazarr folders/jellyfin folders/media folders/registry folders/vaultwarden folders/acestream folders/searxng
 	mkdir -p folders/samba_addc/etc folders/samba_addc/lib folders/users folders/share \
 	  folders/plex_media_server/library folders/plex_media_server/movies folders/plex_media_server/tvseries \
 	  folders/qbittorrent/config folders/qbittorrent/downloads folders/radarr/config folders/sonarr/config \
-	  folders/lidarr/config folders/bazarr/config folders/jellyfin/config folders/media/movies folders/media/tv folders/media/music folders/registry folders/vaultwarden/config folders/acestream \
-	  folders/metube/downloads folders/searxng
+	  folders/lidarr/config folders/bazarr/config folders/jellyfin/config folders/media/movies folders/media/tv folders/media/music folders/media/youtube \
+	  folders/registry folders/vaultwarden/config folders/acestream folders/searxng
 	@echo "OK: стек удалён полностью (контейнеры, образы, volume, сеть, данные)"
 
 remove-dc: ## !!! удалить DC полностью: контейнер, образ, volume, БАЗУ ДОМЕНА (folders/samba_addc)
@@ -200,13 +200,13 @@ remove-acestream: ## !!! удалить Ace Stream полностью: конт�
 	mkdir -p folders/acestream; \
 	echo "OK: $(ACE) удалён полностью (контейнер, образ, кэш)"
 
-remove-metube: ## !!! удалить MeTube полностью: контейнер, образ, ВСЕ загруженные видео
-	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(MT) БЕЗВОЗВРАТНО (контейнер, образ, ВСЕ загруженные видео)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
+remove-metube: ## !!! удалить MeTube полностью: контейнер, образ, ВСЕ загруженные видео (/media/youtube)
+	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(MT) БЕЗВОЗВРАТНО (контейнер, образ, ВСЕ видео в folders/media/youtube)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
 	@img=$$(docker compose images -q $(MT) 2>/dev/null); \
 	docker compose rm -sfv $(MT); \
 	if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
-	rm -rf folders/metube; \
-	mkdir -p folders/metube/downloads; \
+	rm -rf folders/media/youtube; \
+	mkdir -p folders/media/youtube; \
 	echo "OK: $(MT) удалён полностью (контейнер, образ, видео)"
 
 remove-searxng: ## !!! удалить SearXNG полностью: контейнер, образ, настройки

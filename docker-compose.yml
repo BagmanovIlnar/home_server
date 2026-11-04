@@ -241,7 +241,7 @@ services:
 
   # ============================================================
   # MeTube — web-UI для yt-dlp: качай видео с YouTube и 100+ сайтов
-  # Загрузки в folders/metube/downloads (в media-библиотеку — вручную)
+  # Загрузки сразу в общую медиатеку /media/youtube (Jellyfin/Plex)
   # ============================================================
   service_metube:
     image: alexta69/metube:latest
@@ -251,7 +251,7 @@ services:
      # - USER=ilnar          # включить basic-auth (пары USER+PASS)
      # - PASS=Str0ng_Pass!
     volumes:
-      - ./folders/metube/downloads:/downloads
+      - ./folders/media/youtube:/downloads   # общая медиатека media-стека
     ports:
       - 8081:8081
     restart: always

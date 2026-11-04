@@ -16,7 +16,7 @@ docker-compose.yml
 ├── media-стек (все в default-сети compose, связаны томами):
 │     service_qbittorrent (8080 web UI, 6881 peer) → /downloads
 │     service_radarr (7878) / service_sonarr (8989) / service_lidarr (8686) — импорт /downloads → /media/{movies,tv,music}
-│     service_jellyfin (8096) — библиотеки из /media; service_plex тоже подключён к /media (folders/media)
+│     service_jellyfin (8096) — библиотеки из /media; service_plex и service_metube (→ /media/youtube) тоже подключены к folders/media
 ├── service_plex           (linuxserver/plex, порт 32400)
 ├── #service_ace_stream    (ЗАКОММЕНТИРОВАН)
 └── #service_ftp           (ЗАКОММЕНТИРОВАН)
