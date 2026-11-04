@@ -1,6 +1,6 @@
 # Home Server
 
-Домашний сервер на Docker Compose: **Active Directory (Samba AD DC)** + файловый сервер (Samba) + media-стек: **qBittorrent → Radarr/Sonarr/Lidarr → Jellyfin** + медиасервер **Plex**.
+Домашний сервер на Docker Compose: **Active Directory (Samba AD DC)** + файловый сервер (Samba) + media-стек: **qBittorrent → Radarr/Sonarr/Lidarr → Jellyfin** + медиасервер **Plex**, Telegram-прокси, Docker Registry и Vaultwarden (пароли).
 
 Единая аутентификация для **Linux, Windows, macOS** через собственный домен `HOME.ARPA`.
 
@@ -30,6 +30,52 @@ qBittorrent (/downloads) ──качает──▶ Radarr/Sonarr/Lidarr ──
 ```
 
 Разовая настройка — в разделе «Настройка media-стека» ниже.
+
+## Первый запуск
+
+```bash
+make env    # создаст .env из шаблона — пропиши пароли (3 класса символов, от 7)
+make up     # сборка + запуск
+make logs   # ждать "provisioned" у service_samba_addc и статуса healthy
+```
+
+Первый старт DC создаёт домен и пишет базу в `folders/samba_addc/` (персистентна). Файловый сервер сам вводится в домен при каждом старте — это штатно.
+
+В `.env` есть и опциональные переменные (см. соответствующие разделы): `TG_WS_PROXY_SECRET` (Telegram-прокси), `SIGNUPS_ALLOWED` / `ADMIN_TOKEN` (Vaultwarden) — их можно заполнить позже.
+
+## Управление и пользователи (make help — полная справка)
+
+```bash
+# запуск / остановка / сборка: весь стек или по группе
+# (up-dc, up-nas, up-plex, up-media, up-tg, up-registry, up-vaultwarden)
+make up / down / build            # весь стек (down = только остановка, данные живы)
+make up-nas / down-nas / build-dc # конкретный сервис
+
+# ПОЛНОЕ удаление: контейнер + образ + volume + ВСЕ данные сервиса (prune не нужен)
+make remove                        # весь стек (образы, volume, сеть, все folders/)
+make remove-dc                     # + база домена (все юзеры AD!)
+make remove-nas                    # + все домашние каталоги и общая шара
+make remove-media                  # + все загрузки и медиатека media-стека
+make remove-tg                     # + Telegram-прокси (данных нет)
+make remove-registry              # + ВСЕ образы в registry
+make remove-vaultwarden           # + база паролей ВСЕХ пользователей!
+make remove-plex                   # + медиатека
+
+# пользователи домена
+make user-add U=ivan P='Str0ng_Pass!'
+make user-del U=ivan
+make user-pass U=ivan P='New_Pass!'
+make users
+
+make ps / logs
+```
+
+⚠️ `remove-*` запрашивает подтверждение (обойти: `make remove-<x> CONFIRM=yes`) и удаляет данные БЕЗВОЗВРАТНО — образ, контейнер, анонимные volume и соответствующие каталоги в `folders/`.
+
+⚠️ После `make remove-plex` сервер придётся заново привязать к plex.tv (Настройки → Удалённый доступ; при необходимости раскомментировать `PLEX_CLAIM` в docker-compose.yml с новым кодом с plex.tv/claim) и пересобрать библиотеки. Удалённый доступ извне LAN требует проброса порта 32400 на роутере.
+
+Доступ к персональной шаре: `\\<IP-сервера>\ivan`, логин `HOME\ivan`.
+Смена пароля Administrator: `docker exec -it service_samba_addc samba-tool user setpassword Administrator`.
 
 ## Настройка media-стека (разовая, после первого `make up`)
 
@@ -120,7 +166,7 @@ curl http://<IP-сервера>:5000/v2/myapp/tags/list
 
 На сервере-хосте это уже настроено не будет автоматически — добавь `"insecure-registries": ["localhost:5000"]` в daemon.json и там, если хочешь push/pull с самого хоста.
 
-⚠️ Без аутентификации (как прежний Transmission): только доверенная LAN. Включается htpasswd-переменными `REGISTRY_AUTH*` при необходимости.
+⚠️ Без аутентификации — только доверенная LAN. Включается htpasswd-переменными `REGISTRY_AUTH*` при необходимости.
 
 ## Vaultwarden (хранение паролей)
 
@@ -165,49 +211,6 @@ Bitwarden-совместимый сервер (lscr.io/linuxserver/vaultwarden),
    - **Secret:** значение `TG_WS_PROXY_SECRET` из `.env`
 
    (на мобильных достаточно открыть `tg://proxy?...` из логов по ссылке с сервера). Telegram Desktop также поддерживает импорт такой ссылки через «Импорт по ссылке».
-
-## Первый запуск
-
-```bash
-make env    # создаст .env из шаблона — пропиши пароли (3 класса символов, от 7)
-make up     # сборка + запуск
-make logs   # ждать "provisioned" у service_samba_addc и статуса healthy
-```
-
-Первый старт DC создаёт домен и пишет базу в `folders/samba_addc/` (персистентна). Файловый сервер сам вводится в домен при каждом старте — это штатно.
-
-## Управление и пользователи (make help — полная справка)
-
-```bash
-# запуск / остановка / сборка (как всего стека, так и по группе: up-dc, up-nas, up-plex, up-media, up-tg)
-make up / down / build            # весь стек (down = только остановка, данные живы)
-make up-nas / down-nas / build-dc # конкретный сервис
-
-# ПОЛНОЕ удаление: контейнер + образ + volume + ВСЕ данные сервиса (prune не нужен)
-make remove                        # весь стек (образы, volume, сеть, все folders/)
-make remove-dc                     # + база домена (все юзеры AD!)
-make remove-nas                    # + все домашние каталоги и общая шара
-make remove-media                  # + все загрузки и медиатека media-стека
-make remove-tg                     # + Telegram-прокси (данных нет)
-make remove-registry              # + ВСЕ образы в registry
-make remove-vaultwarden           # + база паролей ВСЕХ пользователей!
-make remove-plex                   # + медиатека
-
-# пользователи домена
-make user-add U=ivan P='Str0ng_Pass!'
-make user-del U=ivan
-make user-pass U=ivan P='New_Pass!'
-make users
-
-make ps / logs
-```
-
-⚠️ `remove-*` запрашивает подтверждение (обойти: `make remove-<x> CONFIRM=yes`) и удаляет данные БЕЗВОЗВРАТНО — образ, контейнер, анонимные volume и соответствующие каталоги в `folders/`. Остались git-заглушки `.gitignore`, чтобы структура репо не поехала.
-
-⚠️ После `make remove-plex` сервер придётся заново привязать к plex.tv (Настройки → Удалённый доступ; при необходимости раскомментировать `PLEX_CLAIM` в docker-compose.yml с новым кодом с plex.tv/claim) и пересобрать библиотеки. Удалённый доступ извне LAN требует проброса порта 32400 на роутере.
-
-Доступ к персональной шаре: `\\<IP-сервера>\ivan`, логин `HOME\ivan`.
-Смена пароля Administrator: `docker exec -it service_samba_addc samba-tool user setpassword Administrator`.
 
 ## Решение проблем
 
@@ -268,9 +271,9 @@ echo "nameserver 192.168.1.1" | sudo tee /etc/resolv.conf    # IP твоего �
 
 - **Порт 445 занят файловым сервером**, DC его не публикует → Windows-клиенты не получают GPO/SYSVOL (групповые политики). Вход в домен, логин, аутентификация — работают. Если нужны GPO — переноси шары на DC.
 - **Порт 53 на хосте** должен быть свободен (конфликт с dnsmasq/AdGuard/Pi-hole, systemd-resolved обычно не мешает).
-- Plex, Jellyfin, qBittorrent и *arr **не поддерживают AD** — у них свои локальные аккаунты.
+- Все сервисы вне Samba (Plex, Jellyfin, qBittorrent и *arr, Vaultwarden, registry, Telegram-прокси) **не интегрируются с AD** — у них свои локальные аккаунты.
 - Машина-аккаунт файлового сервера пересоздаётся при `docker compose down/up` (автоматически, штатно).
-- Данные домена: `folders/samba_addc/` — бэкапить.
+- **Бэкапить**: `folders/samba_addc/` (домен) и `folders/vaultwarden/` (все пароли) — потеря безвозвратна.
 
 ## Помощь ИИ-агентам
 

@@ -114,7 +114,6 @@ remove-dc: ## !!! удалить DC полностью: контейнер, об
 	if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
 	rm -rf folders/samba_addc; \
 	mkdir -p folders/samba_addc/etc folders/samba_addc/lib; \
-	touch folders/samba_addc/etc/.gitignore folders/samba_addc/lib/.gitignore; \
 	echo "OK: $(DC) удалён полностью (контейнер, образ, volume, база домена). NAS без DC неработоспособен!"
 
 remove-nas: ## !!! удалить файловый сервер полностью: контейнер, образ, volume, ВСЕ шары и каталоги юзеров
@@ -124,7 +123,6 @@ remove-nas: ## !!! удалить файловый сервер полность
 	if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
 	rm -rf folders/users folders/share; \
 	mkdir -p folders/users folders/share; \
-	touch folders/users/.gitignore folders/share/.gitignore; \
 	echo "OK: $(NAS) удалён полностью (контейнер, образ, volume, файлы пользователей)"
 
 remove-media: ## !!! удалить весь media-стек: контейнеры, образы, volume, ВСЕ загрузки и медиатеку
@@ -144,7 +142,6 @@ remove-plex: ## !!! удалить Plex полностью: контейнер, 
 	if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
 	rm -rf folders/plex_media_server; \
 	mkdir -p folders/plex_media_server/library folders/plex_media_server/movies folders/plex_media_server/tvseries; \
-	touch folders/plex_media_server/library/.gitignore folders/plex_media_server/movies/.gitignore folders/plex_media_server/tvseries/.gitignore; \
 	echo "OK: $(PLEX) удалён полностью (контейнер, образ, volume, медиатека)"
 
 remove-tg: ## !!! удалить Telegram-прокси полностью: контейнер + образ (данных нет)
