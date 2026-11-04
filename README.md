@@ -14,6 +14,7 @@
 | `service_radarr` | Автозагрузка фильмов | 7878 |
 | `service_sonarr` | Автозагрузка сериалов | 8989 |
 | `service_lidarr` | Автозагрузка музыки | 8686 |
+| `service_bazarr` | Субтитры для фильмов и сериалов | 6767 |
 | `service_jellyfin` | Медиасервер | 8096 |
 | `service_plex` | Медиасервер | 32400 |
 | `service_tg_ws_proxy` | Telegram MTProto-прокси (WebSocket) | 1443 |
@@ -28,6 +29,7 @@
 
 ```
 qBittorrent (/downloads) ──качает──▶ Radarr/Sonarr/Lidarr ──импортируют──▶ /media/{movies,tv,music} ──▶ Jellyfin (авто) + Plex (после п.4)
+                                        └─ Bazarr: субтитры к /media/{movies,tv}
 ```
 
 Разовая настройка — в разделе «Настройка media-стека» ниже.
@@ -81,7 +83,7 @@ make ps / logs
 
 ## Настройка media-стека (разовая, после первого `make up`)
 
-Все адреса: `http://<IP-сервера>:<порт>` — qBittorrent `8080`, Radarr `7878`, Sonarr `8989`, Lidarr `8686`, Jellyfin `8096`.
+Все адреса: `http://<IP-сервера>:<порт>` — qBittorrent `8080`, Radarr `7878`, Sonarr `8989`, Lidarr `8686`, Bazarr `6767`, Jellyfin `8096`.
 
 ### Шаг 1. qBittorrent — задать свой пароль
 
@@ -125,6 +127,13 @@ Settings → Media Management → Root Folders → `+`:
 Settings → Indexers → `+` → выбери доступные торрент-трекеры из списка (для приватных нужны логин/API-ключ, публичные добавляются сразу).
 
 **2.5. Проверка:** Movie/Series/Artist → Search → добавь что-нибудь → *arr сам поставит задачу в qBittorrent (`:8080` → Transfers), после скачивания импортирует файл в корневую папку и удалит торрент.
+
+**2.6. Bazarr — субтитры (порт 6767):**
+Settings → Providers настроить язык (Russian) и провайдеров субтитров, затем подключить библиотеки:
+- Settings → Radarr → Enabled, Host `service_radarr`, Port `7878`, API Key (Radarr: Settings → General → API Key)
+- Settings → Sonarr → Enabled, Host `service_sonarr`, Port `8989`, API Key (Sonarr: Settings → General → API Key)
+
+Пути совпадают (`/media` в обоих) — Bazarr сам подпишет сериалы/фильмы субтитрами и будет держать их актуальными при апгрейдах качества.
 
 ### Шаг 3. Jellyfin — библиотеки
 

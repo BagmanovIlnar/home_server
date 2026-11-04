@@ -153,6 +153,20 @@ services:
       - 8686:8686
     restart: always
 
+  service_bazarr:              # субтитры: тянет для библиотек Radarr/Sonarr (API настраивается в UI)
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: service_bazarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-Europe/Moscow}
+    volumes:
+      - ./folders/bazarr/config:/config
+      - ./folders/media:/media
+    ports:
+      - 6767:6767
+    restart: always
+
   service_jellyfin:           # медиасервер: библиотеки из /media (movies, tv, music)
     image: lscr.io/linuxserver/jellyfin:latest
     container_name: service_jellyfin

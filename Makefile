@@ -18,7 +18,7 @@ TG   := service_tg_ws_proxy
 REG  := service_registry
 VW   := service_vaultwarden
 ACE  := service_acestream
-MEDIA := service_qbittorrent service_radarr service_sonarr service_lidarr service_jellyfin
+MEDIA := service_qbittorrent service_radarr service_sonarr service_lidarr service_bazarr service_jellyfin
 
 .DEFAULT_GOAL := help
 .PHONY: help env \
@@ -51,7 +51,7 @@ up-registry: ## запустить Docker Registry (хранилище обра�
 	docker compose up -d $(REG)
 up-tg: ## запустить Telegram-прокси (сборка из github при первом запуске)
 	docker compose up -d $(TG)
-up-media: ## запустить media-стек (qBittorrent + Radarr/Sonarr/Lidarr + Jellyfin)
+up-media: ## запустить media-стек (qBittorrent + Radarr/Sonarr/Lidarr + Bazarr + Jellyfin)
 	docker compose up -d $(MEDIA)
 up-plex: ## запустить только Plex
 	docker compose up -d $(PLEX)
@@ -107,11 +107,11 @@ remove: ## !!! удалить ВЕСЬ стек: контейнеры, обра�
 	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить ВЕСЬ стек БЕЗВОЗВРАТНО (контейнеры, образы, volume, данные)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
 	docker compose down --rmi all --volumes --remove-orphans
 	rm -rf folders/samba_addc folders/users folders/share folders/transmission folders/plex_media_server \
-	  folders/qbittorrent folders/radarr folders/sonarr folders/lidarr folders/jellyfin folders/media folders/registry folders/vaultwarden folders/acestream
+	  folders/qbittorrent folders/radarr folders/sonarr folders/lidarr folders/bazarr folders/jellyfin folders/media folders/registry folders/vaultwarden folders/acestream
 	mkdir -p folders/samba_addc/etc folders/samba_addc/lib folders/users folders/share \
 	  folders/plex_media_server/library folders/plex_media_server/movies folders/plex_media_server/tvseries \
 	  folders/qbittorrent/config folders/qbittorrent/downloads folders/radarr/config folders/sonarr/config \
-	  folders/lidarr/config folders/jellyfin/config folders/media/movies folders/media/tv folders/media/music folders/registry folders/vaultwarden/config folders/acestream
+	  folders/lidarr/config folders/bazarr/config folders/jellyfin/config folders/media/movies folders/media/tv folders/media/music folders/registry folders/vaultwarden/config folders/acestream
 	@echo "OK: стек удалён полностью (контейнеры, образы, volume, сеть, данные)"
 
 remove-dc: ## !!! удалить DC полностью: контейнер, образ, volume, БАЗУ ДОМЕНА (folders/samba_addc)
@@ -133,13 +133,13 @@ remove-nas: ## !!! удалить файловый сервер полность
 	echo "OK: $(NAS) удалён полностью (контейнер, образ, volume, файлы пользователей)"
 
 remove-media: ## !!! удалить весь media-стек: контейнеры, образы, volume, ВСЕ загрузки и медиатеку
-	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить media-стек (qBittorrent, Radarr, Sonarr, Lidarr, Jellyfin) БЕЗВОЗВРАТНО (контейнеры, образы, volume, ВСЕ загрузки и медиатеку)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
+	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить media-стек (qBittorrent, Radarr, Sonarr, Lidarr, Bazarr, Jellyfin) БЕЗВОЗВРАТНО (контейнеры, образы, volume, ВСЕ загрузки и медиатеку)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
 	@imgs=$$(docker compose images -q $(MEDIA) 2>/dev/null); \
 	docker compose rm -sfv $(MEDIA); \
 	for i in $$imgs; do docker rmi $$i || true; done; \
-	rm -rf folders/qbittorrent folders/radarr folders/sonarr folders/lidarr folders/jellyfin folders/media; \
+	rm -rf folders/qbittorrent folders/radarr folders/sonarr folders/lidarr folders/bazarr folders/jellyfin folders/media; \
 	mkdir -p folders/qbittorrent/config folders/qbittorrent/downloads folders/radarr/config folders/sonarr/config \
-	  folders/lidarr/config folders/jellyfin/config folders/media/movies folders/media/tv folders/media/music; \
+	  folders/lidarr/config folders/bazarr/config folders/jellyfin/config folders/media/movies folders/media/tv folders/media/music; \
 	echo "OK: media-стек удалён полностью (контейнеры, образы, volume, загрузки и медиатека)"
 
 remove-plex: ## !!! удалить Plex полностью: контейнер, образ, volume, библиотеку и медиа

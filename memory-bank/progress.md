@@ -7,6 +7,7 @@
 - ~~✅ Управление пользователями: `bash/add_user.sh` (useradd + smbpasswd + каталог с правами 775), `bash/del_user.sh`~~ → заменено на доменные учётки через samba-tool
 - ~~✅ **Transmission** (linuxserver): web-UI на 9091 без авторизации, peer-порт 51413, watch-папка~~ → ЗАМЕНЁН на qBittorrent
 - ✅ **Media-стек** (linuxserver): qBittorrent (8080, peer 6881) + Radarr (7878) + Sonarr (8989) + Lidarr (8686) + Jellyfin (8096); связь через общие тома /downloads и /media + default-сеть compose; код написан, ждёт docker compose up
+- ✅ **Bazarr** service_bazarr (6767, субтитры): в группе MEDIA, ждёт docker compose up
 - ✅ **Ace Stream Engine** service_acestream: 3.2.11, сборка из ubuntu:22.04 + официальный тарбл, порт 6878 (HTTP API/web-плеер); ждёт docker compose up
 - ✅ **Vaultwarden** service_vaultwarden (порт 8222, sqlite в folders/vaultwarden/config): Bitwarden-совместимый сервер паролей; клиенты по HTTP, web-vault требует HTTPS; ждёт docker compose up
 - ✅ **Docker Registry** service_registry (registry:2, порт 5000): хранилище собственных образов, без аутентификации (доверенная LAN); вместо Harbor (overkill). Ждёт docker compose up
