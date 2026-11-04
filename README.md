@@ -23,6 +23,7 @@
 | `service_acestream` | Ace Stream Engine 3.2.11 — p2p-стриминг | 6878 |
 | `service_metube` | MeTube — загрузка видео с YouTube и 100+ сайтов (yt-dlp) → /media/youtube | 8081 |
 | `service_searxng` | SearXNG — приватный метапоисковик | 8888 |
+| `service_portainer` | Portainer — web-UI управления Docker | 9443 |
 | ~~service_ftp~~ | Отключён (закомментирован) | — |
 
 ### Как связаны media-сервисы
@@ -53,7 +54,7 @@ make logs   # ждать "provisioned" у service_samba_addc и статуса h
 
 ```bash
 # запуск / остановка / сборка: весь стек или по группе
-# (up-dc, up-nas, up-plex, up-media, up-tg, up-registry, up-vaultwarden, up-acestream, up-metube, up-searxng)
+# (up-dc, up-nas, up-plex, up-media, up-tg, up-registry, up-vaultwarden, up-acestream, up-metube, up-searxng, up-portainer)
 make up / down / build            # весь стек (down = только остановка, данные живы)
 make up-nas / down-nas / build-dc # конкретный сервис
 
@@ -68,6 +69,7 @@ make remove-vaultwarden           # + база паролей ВСЕХ поль�
 make remove-acestream             # + кэш стримов
 make remove-metube                # + все загруженные видео
 make remove-searxng               # + настройки поиска
+make remove-portainer             # + настройки и учётки Portainer
 make remove-plex                   # + медиатека
 
 # пользователи домена
@@ -247,6 +249,14 @@ Basic-авторизация (если в LAN есть посторонние): 
 
 - Настройки: `folders/searxng/settings.yml` (создаётся автоматически при первом старте, включая секретный ключ — каталог уже не переноси с чужими ключами между инсталляциями).
 - В `.env` можно задать `SEARXNG_BASE_URL=http://<IP-сервера>:8888/` — чтобы ссылки «поделиться» были правильными.
+
+## Portainer (управление Docker через браузер)
+
+`portainer/portainer-ce`, порт `9443` (**https** с самоподписанным сертификатом — браузер предупредит, это нормально). Данные и учётки — `folders/portainer/`.
+
+Первый вход: `https://<IP-сервера>:9443` → создать администратора. ⚠️ У Portainer есть таймаут: если не создать админа в течение ~10 минут после старта, контейнер уходит в protected — перезапусти: `make down-portainer && make up-portainer`.
+
+Дальше: Get Started → локальное окружение (local) — контейнеры/образы/тома/сети/логи/консоли всего стека в браузере. По сути это GUI поверх того же docker compose, стеки в `docker-compose.yml` оно не заменяет.
 
 ## Telegram-прокси (tg-ws-proxy)
 

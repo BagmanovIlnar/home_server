@@ -273,6 +273,20 @@ services:
     restart: always
 
   # ============================================================
+  # Portainer — web-UI управления Docker (контейнеры, образы, тома,
+  # логи, консоли). Первый вход: создать admin-аккаунт (10 мин на это)
+  # ============================================================
+  service_portainer:
+    image: portainer/portainer-ce:latest
+    container_name: service_portainer
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./folders/portainer:/data
+    ports:
+      - 9443:9443     # web-UI (https, самоподписанный сертификат)
+    restart: always
+
+  # ============================================================
   # Медиасервер
   # ============================================================
   service_plex:

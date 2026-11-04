@@ -20,14 +20,15 @@ VW   := service_vaultwarden
 ACE  := service_acestream
 MT   := service_metube
 SXNG := service_searxng
+PT   := service_portainer
 MEDIA := service_qbittorrent service_radarr service_sonarr service_lidarr service_bazarr service_jellyfin
 
 .DEFAULT_GOAL := help
 .PHONY: help env \
-  up up-dc up-nas up-plex up-media up-tg up-registry up-vaultwarden up-acestream up-metube up-searxng \
-  down down-dc down-nas down-plex down-media down-tg down-registry down-vaultwarden down-acestream down-metube down-searxng \
-  build build-dc build-nas build-plex build-media build-tg build-registry build-vaultwarden build-acestream build-metube build-searxng \
-  remove remove-dc remove-nas remove-plex remove-media remove-tg remove-registry remove-vaultwarden remove-acestream remove-metube remove-searxng \
+  up up-dc up-nas up-plex up-media up-tg up-registry up-vaultwarden up-acestream up-metube up-searxng up-portainer \
+  down down-dc down-nas down-plex down-media down-tg down-registry down-vaultwarden down-acestream down-metube down-searxng down-portainer \
+  build build-dc build-nas build-plex build-media build-tg build-registry build-vaultwarden build-acestream build-metube build-searxng build-portainer \
+  remove remove-dc remove-nas remove-plex remove-media remove-tg remove-registry remove-vaultwarden remove-acestream remove-metube remove-searxng remove-portainer \
   logs ps users user-add user-del user-pass
 
 help: ## показать эту справку
@@ -45,6 +46,8 @@ up-dc: ## запустить только домен-контроллер
 	docker compose up -d $(DC)
 up-nas: ## запустить только файловый сервер (потребует DC)
 	docker compose up -d $(NAS)
+up-portainer: ## запустить Portainer (web-UI для Docker)
+	docker compose up -d $(PT)
 up-metube: ## запустить MeTube (загрузка видео с YouTube и др.)
 	docker compose up -d $(MT)
 up-searxng: ## запустить SearXNG (приватный поиск)
@@ -70,6 +73,8 @@ down-dc: ## остановить домен-контроллер
 	docker compose stop $(DC)
 down-nas: ## остановить файловый сервер
 	docker compose stop $(NAS)
+down-portainer: ## остановить Portainer
+	docker compose stop $(PT)
 down-metube: ## остановить MeTube
 	docker compose stop $(MT)
 down-searxng: ## остановить SearXNG
@@ -91,13 +96,15 @@ down-plex: ## остановить Plex
 
 build: ## собрать кастомные образы (dc, nas, tg) и обновить готовые (pull)
 	docker compose build
-	docker compose pull $(MEDIA) $(PLEX) $(VW) $(REG) $(MT) $(SXNG)
+	docker compose pull $(MEDIA) $(PLEX) $(VW) $(REG) $(MT) $(SXNG) $(PT)
 build-dc: ## собрать образ домен-контроллера
 	docker compose build $(DC)
 build-nas: ## собрать образ файлового сервера
 	docker compose build $(NAS)
 build-plex: ## скачать/обновить готовый образ Plex (pull)
 	docker compose pull $(PLEX)
+build-portainer: ## скачать/обновить образ Portainer
+	docker compose pull $(PT)
 build-metube: ## скачать/обновить образ MeTube
 	docker compose pull $(MT)
 build-searxng: ## скачать/обновить образ SearXNG
@@ -121,12 +128,12 @@ remove: ## !!! удалить ВЕСЬ стек: контейнеры, обра�
 	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить ВЕСЬ стек БЕЗВОЗВРАТНО (контейнеры, образы, volume, данные)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
 	docker compose down --rmi all --volumes --remove-orphans
 	rm -rf folders/samba_addc folders/users folders/share folders/transmission folders/plex_media_server \
-	  folders/qbittorrent folders/radarr folders/sonarr folders/lidarr folders/bazarr folders/jellyfin folders/media folders/registry folders/vaultwarden folders/acestream folders/searxng
+	  folders/qbittorrent folders/radarr folders/sonarr folders/lidarr folders/bazarr folders/jellyfin folders/media folders/registry folders/vaultwarden folders/acestream folders/searxng folders/portainer
 	mkdir -p folders/samba_addc/etc folders/samba_addc/lib folders/users folders/share \
 	  folders/plex_media_server/library folders/plex_media_server/movies folders/plex_media_server/tvseries \
 	  folders/qbittorrent/config folders/qbittorrent/downloads folders/radarr/config folders/sonarr/config \
 	  folders/lidarr/config folders/bazarr/config folders/jellyfin/config folders/media/movies folders/media/tv folders/media/music folders/media/youtube \
-	  folders/registry folders/vaultwarden/config folders/acestream folders/searxng
+	  folders/registry folders/vaultwarden/config folders/acestream folders/searxng folders/portainer
 	@echo "OK: стек удалён полностью (контейнеры, образы, volume, сеть, данные)"
 
 remove-dc: ## !!! удалить DC полностью: контейнер, образ, volume, БАЗУ ДОМЕНА (folders/samba_addc)
@@ -216,6 +223,15 @@ remove-searxng: ## !!! удалить SearXNG полностью: контейн
 	if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
 	rm -rf folders/searxng; \
 	echo "OK: $(SXNG) удалён (контейнер, образ, настройки)"
+
+remove-portainer: ## !!! удалить Portainer полностью: контейнер, образ, настройки и пользователей (folders/portainer)
+	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(PT) БЕЗВОЗВРАТНО (контейнер, образ, настройки и учётки Portainer)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
+	@img=$$(docker compose images -q $(PT) 2>/dev/null); \
+	docker compose rm -sfv $(PT); \
+	if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
+	rm -rf folders/portainer; \
+	mkdir -p folders/portainer; \
+	echo "OK: $(PT) удалён полностью (контейнер, образ, настройки)"
 
 # ---------- СТАТУС / ЛОГИ ----------
 
