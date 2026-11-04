@@ -13,15 +13,15 @@ endif
 
 DC   := service_samba_addc
 NAS  := service_samba_folder
-TOR  := service_transmission
 PLEX := service_plex
+MEDIA := service_qbittorrent service_radarr service_sonarr service_lidarr service_jellyfin
 
 .DEFAULT_GOAL := help
 .PHONY: help env \
-  up up-dc up-nas up-transmission up-plex \
-  down down-dc down-nas down-transmission down-plex \
-  build build-dc build-nas build-plex build-transmission \
-  remove remove-dc remove-nas remove-transmission remove-plex \
+  up up-dc up-nas up-plex up-media \
+  down down-dc down-nas down-plex down-media \
+  build build-dc build-nas build-plex build-media \
+  remove remove-dc remove-nas remove-plex remove-media \
   logs ps users user-add user-del user-pass
 
 help: ## показать эту справку
@@ -39,8 +39,8 @@ up-dc: ## запустить только домен-контроллер
 	docker compose up -d $(DC)
 up-nas: ## запустить только файловый сервер (потребует DC)
 	docker compose up -d $(NAS)
-up-transmission: ## запустить только Transmission
-	docker compose up -d $(TOR)
+up-media: ## запустить media-стек (qBittorrent + Radarr/Sonarr/Lidarr + Jellyfin)
+	docker compose up -d $(MEDIA)
 up-plex: ## запустить только Plex
 	docker compose up -d $(PLEX)
 
@@ -52,8 +52,8 @@ down-dc: ## остановить домен-контроллер
 	docker compose stop $(DC)
 down-nas: ## остановить файловый сервер
 	docker compose stop $(NAS)
-down-transmission: ## остановить Transmission
-	docker compose stop $(TOR)
+down-media: ## остановить media-стек
+	docker compose stop $(MEDIA)
 down-plex: ## остановить Plex
 	docker compose stop $(PLEX)
 
@@ -61,15 +61,15 @@ down-plex: ## остановить Plex
 
 build: ## собрать все кастомные образы (dc + nas) и обновить готовые (pull)
 	docker compose build
-	docker compose pull $(TOR) $(PLEX)
+	docker compose pull $(MEDIA) $(PLEX)
 build-dc: ## собрать образ домен-контроллера
 	docker compose build $(DC)
 build-nas: ## собрать образ файлового сервера
 	docker compose build $(NAS)
 build-plex: ## скачать/обновить готовый образ Plex (pull)
 	docker compose pull $(PLEX)
-build-transmission: ## скачать/обновить готовый образ Transmission (pull)
-	docker compose pull $(TOR)
+build-media: ## скачать/обновить готовые образы media-стека (pull)
+	docker compose pull $(MEDIA)
 
 # ---------- ПОЛНОЕ УДАЛЕНИЕ (контейнер + образ + volume + данные) ----------
 # Удаляется ВСЁ, что связано с сервисом: контейнер, образ, анонимные volume,
@@ -78,14 +78,12 @@ build-transmission: ## скачать/обновить готовый образ
 remove: ## !!! удалить ВЕСЬ стек: контейнеры, образы, volume, сеть, ВСЕ данные
 	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить ВЕСЬ стек БЕЗВОЗВРАТНО (контейнеры, образы, volume, данные)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
 	docker compose down --rmi all --volumes --remove-orphans
-	rm -rf folders/samba_addc folders/users folders/share folders/transmission folders/plex_media_server
+	rm -rf folders/samba_addc folders/users folders/share folders/transmission folders/plex_media_server \
+	  folders/qbittorrent folders/radarr folders/sonarr folders/lidarr folders/jellyfin folders/media
 	mkdir -p folders/samba_addc/etc folders/samba_addc/lib folders/users folders/share \
-	  folders/transmission/config folders/transmission/downloads folders/transmission/torrents \
-	  folders/plex_media_server/library folders/plex_media_server/movies folders/plex_media_server/tvseries
-	touch folders/samba_addc/etc/.gitignore folders/samba_addc/lib/.gitignore folders/users/.gitignore \
-	  folders/share/.gitignore folders/transmission/config/.gitignore folders/transmission/downloads/.gitignore \
-	  folders/transmission/torrents/.gitignore folders/plex_media_server/library/.gitignore \
-	  folders/plex_media_server/movies/.gitignore folders/plex_media_server/tvseries/.gitignore
+	  folders/plex_media_server/library folders/plex_media_server/movies folders/plex_media_server/tvseries \
+	  folders/qbittorrent/config folders/qbittorrent/downloads folders/radarr/config folders/sonarr/config \
+	  folders/lidarr/config folders/jellyfin/config folders/media/movies folders/media/tv folders/media/music
 	@echo "OK: стек удалён полностью (контейнеры, образы, volume, сеть, данные)"
 
 remove-dc: ## !!! удалить DC полностью: контейнер, образ, volume, БАЗУ ДОМЕНА (folders/samba_addc)
@@ -108,15 +106,15 @@ remove-nas: ## !!! удалить файловый сервер полность
 	touch folders/users/.gitignore folders/share/.gitignore; \
 	echo "OK: $(NAS) удалён полностью (контейнер, образ, volume, файлы пользователей)"
 
-remove-transmission: ## !!! удалить Transmission полностью: контейнер, образ, volume, загрузки и конфиг
-	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(TOR) БЕЗВОЗВРАТНО (контейнер, образ, volume, ВСЕ загрузки)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
-	@img=$$(docker compose images -q $(TOR) 2>/dev/null); \
-	docker compose rm -sfv $(TOR); \
-	if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
-	rm -rf folders/transmission; \
-	mkdir -p folders/transmission/config folders/transmission/downloads folders/transmission/torrents; \
-	touch folders/transmission/config/.gitignore folders/transmission/downloads/.gitignore folders/transmission/torrents/.gitignore; \
-	echo "OK: $(TOR) удалён полностью (контейнер, образ, volume, загрузки)"
+remove-media: ## !!! удалить весь media-стек: контейнеры, образы, volume, ВСЕ загрузки и медиатеку
+	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить media-стек (qBittorrent, Radarr, Sonarr, Lidarr, Jellyfin) БЕЗВОЗВРАТНО (контейнеры, образы, volume, ВСЕ загрузки и медиатеку)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
+	@imgs=$$(docker compose images -q $(MEDIA) 2>/dev/null); \
+	docker compose rm -sfv $(MEDIA); \
+	for i in $$imgs; do docker rmi $$i || true; done; \
+	rm -rf folders/qbittorrent folders/radarr folders/sonarr folders/lidarr folders/jellyfin folders/media; \
+	mkdir -p folders/qbittorrent/config folders/qbittorrent/downloads folders/radarr/config folders/sonarr/config \
+	  folders/lidarr/config folders/jellyfin/config folders/media/movies folders/media/tv folders/media/music; \
+	echo "OK: media-стек удалён полностью (контейнеры, образы, volume, загрузки и медиатека)"
 
 remove-plex: ## !!! удалить Plex полностью: контейнер, образ, volume, библиотеку и медиа
 	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(PLEX) БЕЗВОЗВРАТНО (контейнер, образ, volume, библиотеку и ВСЁ медиа)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi

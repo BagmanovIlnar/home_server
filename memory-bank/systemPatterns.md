@@ -13,13 +13,16 @@ docker-compose.yml
 │   ├── folders/users   -> /var/home-service/users   ([homes] доменных юзеров)
 │   ├── folders/share   -> /var/home-service/share   (общая шара home_share)
 │   └── services/samba_folder/config -> /etc/samba/smb.conf.d (секции шар)
-├── service_transmission   (linuxserver/transmission, порты 9091, 51413/tcp+udp)
+├── media-стек (все в default-сети compose, связаны томами):
+│     service_qbittorrent (8080 web UI, 6881 peer) → /downloads
+│     service_radarr (7878) / service_sonarr (8989) / service_lidarr (8686) — импорт /downloads → /media/{movies,tv,music}
+│     service_jellyfin (8096) — библиотеки из /media
 ├── service_plex           (linuxserver/plex, порт 32400)
 ├── #service_ace_stream    (ЗАКОММЕНТИРОВАН)
 └── #service_ftp           (ЗАКОММЕНТИРОВАН)
 ```
 
-Сеть: `network_service` (subnet 172.28.0.0/24, DC — 172.28.0.53). Transmission/Plex вне этой сети.
+Сеть: `network_service` (subnet 172.28.0.0/24, DC — 172.28.0.53). Media-стек/Plex вне этой сети (default-сеть compose).
 
 ## Key Technical Decisions
 - **Active Directory на Samba AD DC** в отдельном контейнере + файловый сервер как member (security=ads + winbind + idmap rid 10000-999999). Домен HOME.ARPA (RFC 8375), NetBIOS HOME, DC dc1 — всё переопределяется в `.env`
@@ -29,7 +32,7 @@ docker-compose.yml
 - **Member делает net ads join при каждом старте** (машинный секрет не персистентится) — штатно; DNS-обновления отключены (--no-dns-updates, чтобы не писать docker-IP в DNS)
 - **Member использует DNS от DC** (`dns: 172.28.0.53`) — docker embedded DNS не умеет SRV; DC сам форвардит внешние запросы к AD_DNS_FORWARDER
 - **Секреты в `.env`** (gitignore): AD_ADMIN_PASSWORD, AD_JOIN_PASSWORD; шаблон — `.env.example`
-- **Готовые образы linuxserver.io** для Transmission и Plex; Samba-сервисы собираются кастомно из ubuntu:26.04 LTS
+- **Готовые образы linuxserver.io** для qBittorrent, Radarr, Sonarr, Lidarr, Jellyfin, Plex; Samba-сервисы собираются кастомно из ubuntu:26.04 LTS
 - **Конфиги шар Samba** — файлы в smb.conf.d, при старте run.sh генерирует [global] (домен) и приклеивает шары через cat (построчный while-read убран — манглил бэкслэши/пробелы)
 - **Автосинк ФС ↔ AD (home_sync.sh)** — фоновый цикл в member-контейнере (SYNC_INTERVAL, по умолч. 60с): доменный юзер без каталога → создаётся users/<u> (chown u:domain users, 0700); каталог без юзера в AD → архивируется в users/.deleted/<u>_<ts> (не rm — защита от ложного срабатывания при недоступном DC; гарды wbinfo -P/-u). Работает независимо от способа создания юзера (make user-add / RSAT / samba-tool напрямую)
 - **[homes] защищён** invalid users = root Administrator krbtgt Guest; встроенные учётки не получают шары
@@ -43,8 +46,8 @@ docker-compose.yml
 ## Component Relationships
 - AD DC ←join— Файловый сервер (аутентификация доменных юзеров на шарах через winbind)
 - LAN-клиенты (Win/Mac/Linux) → DNS 53 сервера → SRV-записи → Kerberos/LDAP DC → вход в домен; шары → 445 файлового сервера (логин HOME\user)
-- Transmission (downloads) -> [ручное перемещение] -> Plex (movies/tvseries). Автоматизации связи нет.
-- Plex/Transmission с AD НЕ интегрируются (свои локальные аккаунты)
+- qBittorrent (/downloads) -> Radarr/Sonarr/Lidarr (автоимпорт) -> /media/{movies,tv,music} -> Jellyfin (и Plex вручную)
+- Plex/media-стек с AD НЕ интегрируются (свои локальные аккаунты)
 
 ## Critical Implementation Paths
 - `docker-compose.yml` — сервисы, порты, subnet 172.28.0.0/24, .env-переменные
@@ -60,4 +63,4 @@ docker-compose.yml
 - LAN-клиенты должны использовать сервер как DNS (настройка DHCP роутера), иначе SRV-записи домена не найдутся
 - Kerberos чувствителен к времени: NTP на хосте обязателен
 - `services/ace-stream/Dockerfile` ссылается на отсутствующие файлы (`search.py`, `setup.cfg`, `default.conf`, `nginx.conf`) — образ не собирается
-- Transmission: авторизация веб-UI отключена — порт 9091 только из локальной сети
+- qBittorrent: временный пароль в логе контейнера — сменить после первого входа; ports 8080/6881 только из доверенной LAN

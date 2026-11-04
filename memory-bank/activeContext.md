@@ -1,9 +1,11 @@
 # Active Context: Home Server
 
 ## Current Work Focus
-**Внедрение Active Directory (реализовано, ожидает развёртывания на сервере).** Добавлен Samba AD DC (`service_samba_addc`) + файловый сервер переведён из standalone в member домена. Единая аутентификация для Linux/Windows/macOS через домен HOME.ARPA (настраивается в .env).
+**Media-стек: Transmission заменён на qBittorrent, добавлены Radarr/Sonarr/Lidarr/Jellyfin** (ожидает развёртывания на сервере). AD (Samba AD DC) реализован ранее, тоже ждёт развёртывания.
 
 ## Recent Changes (по git-истории)
+- 2024+: MEDIA-СТЕК: Transmission удалён (сервис из compose, legacy-каталог services/transmission), добавлены service_qbittorrent (8080/6881, BitTorrent-клиент), service_radarr (7878), service_sonarr (8989), service_lidarr (8686), service_jellyfin (8096). Связь: общие тома — folders/qbittorrent/downloads монтируется как /downloads в qBittorrent+все *arr, folders/media как /media в *arr+Jellyfin (одинаковые пути => Remote Path Mapping не нужен); все в default-сети compose, друг друга видят по именам (клиент загрузок в *arr: service_qbittorrent:8080). Plex остался рядом (свои каталоги folders/plex_media_server). Makefile: transmission-цели заменены на group-цели up/down/build/remove-media. Старые загрузки Transmission остались в folders/transmission на сервере (не удалялись, перенести вручную при желании)
+- 2024+: README: подробная пошаговая настройка media-стека (пароль qBittorrent из лога → аутентификация+download client+root folder+индексеры в каждом *arr → библиотеки Jellyfin /media/*)
 - 2024+: sh-скрипты bash/ заменены на Makefile: user-add/user-del/user-pass/users (samba-tool) + env/up/down/logs/ps; README и память обновлены
 - 2024+: krb5-user в ubuntu:26.04 интерактивно спрашивает realm при apt install (debconf-диалог) — глушится ARG DEBIAN_FRONTEND=noninteractive + debconf-set-selections пресидами в обоих Dockerfile (значения неважны: krb5.conf генерится в run.sh)
 - 2024+: БАЗА ОБРАЗОВ: ubuntu 22.04 → 26.04 LTS (addc/folder/ftp + мёртвые plex/transmission Dockerfile); в DC добавлен samba-ad-provision; проверено: init.d smbd/winbind в resolute, rpc server port актуален, пакет в resolute-updates есть

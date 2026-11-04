@@ -85,29 +85,88 @@ services:
       - "445:445"
 
   # ============================================================
-  # Torrent-клиент
+  # Media-стек: qBittorrent -> Radarr/Sonarr/Lidarr -> Jellyfin
+  # Все media-сервисы без явных networks: сидят в default-сети compose
+  # и видят друг друга по именам сервисов (напр. service_qbittorrent:8080).
+  # Пути /downloads и /media ОДИНАКОВЫ во всех контейнерах —
+  # это связь qBittorrent <-> *arr <-> Jellyfin без Remote Path Mapping.
   # ============================================================
-  service_transmission:
-    image: lscr.io/linuxserver/transmission:latest
-    container_name: service_transmission
+  service_qbittorrent:        # торрент-клиент (BitTorrent)
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: service_qbittorrent
     environment:
       - PUID=1000
       - PGID=1000
       - TZ=${TZ:-Europe/Moscow}
-     #   - TRANSMISSION_WEB_HOME= #optional
-     #   - USER=ilnar
-     #   - PASS=12345
-     #   - WHITELIST= #optional
-     #   - PEERPORT= #optional
-     #   - HOST_WHITELIST= #optional
+      - WEBUI_PORT=8080
     volumes:
-      - ./folders/transmission/config:/config
-      - ./folders/transmission/downloads:/downloads
-      - ./folders/transmission/torrents:/watch
+      - ./folders/qbittorrent/config:/config
+      - ./folders/qbittorrent/downloads:/downloads
     ports:
-      - 9091:9091
-      - 51413:51413
-      - 51413:51413/udp
+      - 8080:8080
+      - 6881:6881
+      - 6881:6881/udp
+    restart: always
+
+  service_radarr:             # фильмы: качает через qBittorrent, раскладывает в /media/movies
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: service_radarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-Europe/Moscow}
+    volumes:
+      - ./folders/radarr/config:/config
+      - ./folders/qbittorrent/downloads:/downloads
+      - ./folders/media:/media
+    ports:
+      - 7878:7878
+    restart: always
+
+  service_sonarr:             # сериалы: /media/tv
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: service_sonarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-Europe/Moscow}
+    volumes:
+      - ./folders/sonarr/config:/config
+      - ./folders/qbittorrent/downloads:/downloads
+      - ./folders/media:/media
+    ports:
+      - 8989:8989
+    restart: always
+
+  service_lidarr:             # музыка: /media/music
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: service_lidarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-Europe/Moscow}
+    volumes:
+      - ./folders/lidarr/config:/config
+      - ./folders/qbittorrent/downloads:/downloads
+      - ./folders/media:/media
+    ports:
+      - 8686:8686
+    restart: always
+
+  service_jellyfin:           # медиасервер: библиотеки из /media (movies, tv, music)
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: service_jellyfin
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-Europe/Moscow}
+    volumes:
+      - ./folders/jellyfin/config:/config
+      - ./folders/media:/media
+    #devices:
+    #  - /dev/dri:/dev/dri    # раскомментируй для аппаратного транскодирования (Intel QuickSync)
+    ports:
+      - 8096:8096
     restart: always
 
   # ============================================================

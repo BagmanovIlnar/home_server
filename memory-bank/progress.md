@@ -5,7 +5,8 @@
 - ✅ **Файловый сервер в домене** (service_samba_folder): security=ads, winbind, rid-idmap, авто-join при старте; шары home_share + [homes] для доменных юзеров; АВТОСИНК домашних каталогов с AD (home_sync.sh): создание при появлении юзера, архивация в .deleted при удалении
 - ✅ **Управление (Makefile)**: user-add/user-del/user-pass/users + env/up/down/logs/ps (заменили bash/*.sh)
 - ~~✅ Управление пользователями: `bash/add_user.sh` (useradd + smbpasswd + каталог с правами 775), `bash/del_user.sh`~~ → заменено на доменные учётки через samba-tool
-- ✅ **Transmission** (linuxserver): web-UI на 9091 без авторизации, peer-порт 51413, watch-папка `folders/transmission/torrents`, загрузки в `folders/transmission/downloads`
+- ~~✅ **Transmission** (linuxserver): web-UI на 9091 без авторизации, peer-порт 51413, watch-папка~~ → ЗАМЕНЁН на qBittorrent
+- ✅ **Media-стек** (linuxserver): qBittorrent (8080, peer 6881) + Radarr (7878) + Sonarr (8989) + Lidarr (8686) + Jellyfin (8096); связь через общие тома /downloads и /media + default-сеть compose; код написан, ждёт docker compose up
 - ✅ **Plex** (linuxserver): порт 32400, библиотека/фильмы/сериалы в `folders/plex_media_server/`, активирован (PLEX_CLAIM больше не нужен)
 - ✅ Все сервисы с `restart: always`, данные персистятся в `folders/`
 - ✅ README со ссылкой на решение проблемы авторизации Plex

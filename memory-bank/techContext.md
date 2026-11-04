@@ -5,7 +5,7 @@
 - **Samba AD DC** (custom build ubuntu:26.04 LTS) — Active Directory: DNS (SAMBA_INTERNAL), Kerberos KDC, LDAP/LDAPS, Global Catalog; домен HOME.ARPA
 - **Samba member + winbind** (custom build ubuntu:26.04 LTS) — файловый сервер в домене, idmap rid, порт 445
 - **Kerberos/krb5** — аутентификация (порты 88, 464)
-- **Transmission** — образ `lscr.io/linuxserver/transmission:latest`, порты 9091 (web UI без пароля), 51413 tcp/udp
+- **Media-стек (linuxserver)** — qBittorrent (8080 web UI, 6881 tcp/udp peer), Radarr 7878, Sonarr 8989, Lidarr 8686, Jellyfin 8096; связаны общими томами /downloads (qBittorrent+*arr) и /media (*arr+Jellyfin) + default-сеть compose
 - **Plex Media Server** — образ `lscr.io/linuxserver/plex:latest`, порт 32400
 - **vsftpd** (отключён), **Ace Stream** (отключён, образ не собирается)
 - **Shell-скрипты** (POSIX sh) — управление доменными пользователями через samba-tool
@@ -23,11 +23,11 @@
 - Kerberos требует точного времени: NTP на хосте обязателен (контейнеры наследуют часы хоста)
 - Домен HOME.ARPA / NetBIOS HOME — смена через .env (переделать provisioning: удалить folders/samba_addc/lib)
 - Контейнеры linuxserver: PUID=1000, PGID=1000, TZ=Europe/Moscow
-- Transmission без пароля — доступ только из доверенной LAN
-- Windows Home не входит в домен; Plex/Transmission не поддерживают AD/LDAP
+- qBittorrent: временный пароль в логе контейнера при первом старте (сменить)
+- Windows Home не входит в домен; Plex/Jellyfin/qBittorrent/*arr не поддерживают AD/LDAP
 
 ## Dependencies
-- linuxserver/transmission:latest (docker hub lscr.io)
+- linuxserver/qbittorrent|radarr|sonarr|lidarr|jellyfin:latest (docker hub lscr.io)
 - linuxserver/plex:latest (docker hub lscr.io)
 - ubuntu:26.04 LTS (база для custom-сборок; обновлено с 22.04; проверено: samba-ad-provision, init.d smbd/winbind, rpc server port — всё на месте)
 - vstavrinov/acestream-engine (для отключённого ace-stream; образ сейчас не собирается — отсутствуют файлы контекста)
@@ -35,8 +35,8 @@
 ## Tool Usage Patterns
 - `make help` — справка; `make user-add U=<user> P=<pass>` — доменный юзер + домашний каталог (chown DOMAIN\user, 0700, с ожиданием видимости в winbind)
 - `make user-del U=<user>` / `make user-pass U= P=` / `make users` — удаление/пароль/список
-- `make env` / `up[-dc|nas|plex|transmission]` / `down[-...]` — запуск/остановка (всего стека или по сервису; down = только stop, данные живы)
+- `make env` / `up[-dc|nas|plex|media]` / `down[-...]` — запуск/остановка (всего стека или по сервису; down = только stop, данные живы)
 - `make build[-dc|nas]` — сборка кастомных образов
-- `make remove[-dc|nas|plex|transmission]` — ПОЛНОЕ удаление: контейнер + образ + анонимные volume + данные в folders/ (rm -rf с восстановлением git-заглушек .gitignore); подтверждение через read, обход — CONFIRM=yes; цель — чтобы docker prune был не нужен
+- `make remove[-dc|nas|plex|media]` — ПОЛНОЕ удаление: контейнер + образ + анонимные volume + данные в folders/ (rm -rf с восстановлением git-заглушек .gitignore); подтверждение через read, обход — CONFIRM=yes; цель — чтобы docker prune был не нужен
 - Управление руками: `docker compose ...`; при down/up member сам переjoin'ится — штатно
 - Диагностика домена: `docker exec service_samba_addc samba-tool dns query localhost HOME.ARPA @ ALL -U administrator`
