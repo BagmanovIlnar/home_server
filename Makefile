@@ -14,14 +14,15 @@ endif
 DC   := service_samba_addc
 NAS  := service_samba_folder
 PLEX := service_plex
+TG   := service_tg_ws_proxy
 MEDIA := service_qbittorrent service_radarr service_sonarr service_lidarr service_jellyfin
 
 .DEFAULT_GOAL := help
 .PHONY: help env \
-  up up-dc up-nas up-plex up-media \
-  down down-dc down-nas down-plex down-media \
-  build build-dc build-nas build-plex build-media \
-  remove remove-dc remove-nas remove-plex remove-media \
+  up up-dc up-nas up-plex up-media up-tg \
+  down down-dc down-nas down-plex down-media down-tg \
+  build build-dc build-nas build-plex build-media build-tg \
+  remove remove-dc remove-nas remove-plex remove-media remove-tg \
   logs ps users user-add user-del user-pass
 
 help: ## показать эту справку
@@ -39,6 +40,8 @@ up-dc: ## запустить только домен-контроллер
 	docker compose up -d $(DC)
 up-nas: ## запустить только файловый сервер (потребует DC)
 	docker compose up -d $(NAS)
+up-tg: ## запустить Telegram-прокси (сборка из github при первом запуске)
+	docker compose up -d $(TG)
 up-media: ## запустить media-стек (qBittorrent + Radarr/Sonarr/Lidarr + Jellyfin)
 	docker compose up -d $(MEDIA)
 up-plex: ## запустить только Plex
@@ -52,6 +55,8 @@ down-dc: ## остановить домен-контроллер
 	docker compose stop $(DC)
 down-nas: ## остановить файловый сервер
 	docker compose stop $(NAS)
+down-tg: ## остановить Telegram-прокси
+	docker compose stop $(TG)
 down-media: ## остановить media-стек
 	docker compose stop $(MEDIA)
 down-plex: ## остановить Plex
@@ -68,6 +73,8 @@ build-nas: ## собрать образ файлового сервера
 	docker compose build $(NAS)
 build-plex: ## скачать/обновить готовый образ Plex (pull)
 	docker compose pull $(PLEX)
+build-tg: ## пересобрать образ Telegram-прокси из github
+	docker compose build $(TG)
 build-media: ## скачать/обновить готовые образы media-стека (pull)
 	docker compose pull $(MEDIA)
 
@@ -125,6 +132,13 @@ remove-plex: ## !!! удалить Plex полностью: контейнер, 
 	mkdir -p folders/plex_media_server/library folders/plex_media_server/movies folders/plex_media_server/tvseries; \
 	touch folders/plex_media_server/library/.gitignore folders/plex_media_server/movies/.gitignore folders/plex_media_server/tvseries/.gitignore; \
 	echo "OK: $(PLEX) удалён полностью (контейнер, образ, volume, медиатека)"
+
+remove-tg: ## !!! удалить Telegram-прокси полностью: контейнер + образ (данных нет)
+	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(TG) (контейнер + образ)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
+	@img=$$(docker compose images -q $(TG) 2>/dev/null); \
+	docker compose rm -sfv $(TG); \
+	if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
+	echo "OK: $(TG) удалён (контейнер, образ)"
 
 # ---------- СТАТУС / ЛОГИ ----------
 

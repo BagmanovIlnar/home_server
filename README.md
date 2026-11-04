@@ -16,6 +16,7 @@
 | `service_lidarr` | Автозагрузка музыки | 8686 |
 | `service_jellyfin` | Медиасервер | 8096 |
 | `service_plex` | Медиасервер | 32400 |
+| `service_tg_ws_proxy` | Telegram MTProto-прокси (WebSocket) | 1443 |
 | ~~service_ace_stream, service_ftp~~ | Отключены (закомментированы) | — |
 
 ### Как связаны media-сервисы
@@ -90,6 +91,29 @@ Settings → Indexers → `+` → выбери доступные торрент
 4. Новые файлы *arr подхватываются автоматически (планровщик сканирует библиотеки; форс — Dashboard → Libraries → Scan All Libraries).
 5. Аппаратное транскодирование (Intel QuickSync): раскомментируй `devices: /dev/dri:/dev/dri` в docker-compose.yml → `make up-media` → Dashboard → Playback → Transcoding → Hardware acceleration: Intel QuickSync.
 
+## Telegram-прокси (tg-ws-proxy)
+
+[FlowSeal/tg-ws-proxy](https://github.com/FlowSeal/tg-ws-proxy) — MTProto-прокси (WebSocket), чтобы Telegram работал в домашней сети. Образ собирается из GitHub при первом `make up-tg` (пин тега в docker-compose.yml).
+
+### Настройка (разовая)
+
+1. В `.env` задай фиксированный секрет (иначе при каждом пересоздании контейнера генерируется новый — придётся заново настраивать клиентов):
+   ```bash
+   openssl rand -hex 16   # результат — в .env: TG_WS_PROXY_SECRET=...
+   make up-tg
+   ```
+2. Получи ссылку подключения:
+   ```bash
+   docker compose logs service_tg_ws_proxy | grep 'tg://proxy'
+   ```
+3. Telegram-клиенты (Desktop / мобильные из LAN): Настройки → Продвинутые → Тип подключения → Прокси → добавить вручную:
+   - **Тип:** MTProto
+   - **Сервер:** `<IP-сервера>`
+   - **Порт:** `1443`
+   - **Secret:** значение `TG_WS_PROXY_SECRET` из `.env`
+
+   (на мобильных достаточно открыть `tg://proxy?...` из логов по ссылке с сервера). Telegram Desktop также поддерживает импорт такой ссылки через «Импорт по ссылке».
+
 ## Первый запуск
 
 ```bash
@@ -103,7 +127,7 @@ make logs   # ждать "provisioned" у service_samba_addc и статуса h
 ## Управление и пользователи (make help — полная справка)
 
 ```bash
-# запуск / остановка / сборка (как всего стека, так и по группе: up-dc, up-nas, up-plex, up-media)
+# запуск / остановка / сборка (как всего стека, так и по группе: up-dc, up-nas, up-plex, up-media, up-tg)
 make up / down / build            # весь стек (down = только остановка, данные живы)
 make up-nas / down-nas / build-dc # конкретный сервис
 
@@ -112,6 +136,7 @@ make remove                        # весь стек (образы, volume, с
 make remove-dc                     # + база домена (все юзеры AD!)
 make remove-nas                    # + все домашние каталоги и общая шара
 make remove-media                  # + все загрузки и медиатека media-стека
+make remove-tg                     # + Telegram-прокси (данных нет)
 make remove-plex                   # + медиатека
 
 # пользователи домена

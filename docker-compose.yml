@@ -170,6 +170,24 @@ services:
     restart: always
 
   # ============================================================
+  # Telegram MTProto-прокси (WebSocket) — доступ к Telegram из LAN
+  # Сборка из git-репозитория (пин тега). Ссылка для клиентов — в логах:
+  #   docker compose logs service_tg_ws_proxy | grep 'tg://proxy'
+  # Секрет: если TG_WS_PROXY_SECRET не задан в .env — генерируется заново
+  # при каждом пересоздании контейнера (придётся заново брать из логов)
+  # ============================================================
+  service_tg_ws_proxy:
+    restart: always
+    container_name: service_tg_ws_proxy
+    build:
+      context: https://github.com/FlowSeal/tg-ws-proxy.git#v1.11.4
+    environment:
+      - TZ=${TZ:-Europe/Moscow}
+      - TG_WS_PROXY_SECRET=${TG_WS_PROXY_SECRET:-}
+    ports:
+      - 1443:1443
+
+  # ============================================================
   # Медиасервер
   # ============================================================
   service_plex:
