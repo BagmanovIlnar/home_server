@@ -26,7 +26,7 @@
 Все сидят в общей сети compose и видят друг друга по именам; пути томов совпадают, поэтому Remote Path Mapping не нужен:
 
 ```
-qBittorrent (/downloads) ──качает──▶ Radarr/Sonarr/Lidarr ──импортируют──▶ /media/{movies,tv,music} ──▶ Jellyfin (+Plex вручную)
+qBittorrent (/downloads) ──качает──▶ Radarr/Sonarr/Lidarr ──импортируют──▶ /media/{movies,tv,music} ──▶ Jellyfin (авто) + Plex (после п.4)
 ```
 
 Разовая настройка — в разделе «Настройка media-стека» ниже.
@@ -138,6 +138,17 @@ Settings → Indexers → `+` → выбери доступные торрент
 3. В каждой библиотеке Preferred metadata language: `Russian`.
 4. Новые файлы *arr подхватываются автоматически (планровщик сканирует библиотеки; форс — Dashboard → Libraries → Scan All Libraries).
 5. Аппаратное транскодирование (Intel QuickSync): раскомментируй `devices: /dev/dri:/dev/dri` в docker-compose.yml → `make up-media` → Dashboard → Playback → Transcoding → Hardware acceleration: Intel QuickSync.
+
+### Шаг 4. Plex — те же библиотеки media-стека (опционально)
+
+Plex подключён к той же медиатеке (`/media` = `folders/media`). После старта Plex (`:32400`):
+1. Настройки → Медиатеки → Добавить библиотеку:
+   - Фильмы → папка `/media/movies`
+   - Сериалы → папка `/media/tv`
+   - Музыка → папка `/media/music`
+2. Включи «Сканировать медиатеку периодически» — новые файлы *arr будут подхватываться сами.
+
+(Старые каталоги `/movies`, `/tv` из `folders/plex_media_server/` остаются подключёнными как есть.)
 
 ## Docker Registry (хранилище собственных образов)
 

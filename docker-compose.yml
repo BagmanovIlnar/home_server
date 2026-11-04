@@ -241,6 +241,7 @@ services:
       - ./folders/plex_media_server/library:/config
       - ./folders/plex_media_server/movies:/movies
       - ./folders/plex_media_server/tvseries:/tv
+      - ./folders/media:/media   # медиатека media-стека (*arr → Jellyfin/Plex)
     restart: always
     ports:
       - 32400:32400
