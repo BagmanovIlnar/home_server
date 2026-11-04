@@ -6,6 +6,7 @@
 - **Samba member + winbind** (custom build ubuntu:26.04 LTS) — файловый сервер в домене, idmap rid, порт 445
 - **Kerberos/krb5** — аутентификация (порты 88, 464)
 - **Media-стек (linuxserver)** — qBittorrent (8080 web UI, 6881 tcp/udp peer), Radarr 7878, Sonarr 8989, Lidarr 8686, Jellyfin 8096; связаны общими томами /downloads (qBittorrent+*arr) и /media (*arr+Jellyfin) + default-сеть compose
+- **registry:2** — Docker Registry, порт 5000, HTTP (клиентам нужен insecure-registries в daemon.json), данные в folders/registry, без аутентификации (доверенная LAN; Harbor отклонён как overkill)
 - **tg-ws-proxy** (FlowSeal/tg-ws-proxy, MTProto over WebSocket) — Telegram-прокси, порт 1443; образ собирается из git-контекста с пином тега v1.11.4; секрет TG_WS_PROXY_SECRET в .env (пусто = random на каждый рестарт)
 - **Plex Media Server** — образ `lscr.io/linuxserver/plex:latest`, порт 32400
 - **vsftpd** (отключён), **Ace Stream** (отключён, образ не собирается)

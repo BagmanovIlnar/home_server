@@ -17,6 +17,7 @@
 | `service_jellyfin` | Медиасервер | 8096 |
 | `service_plex` | Медиасервер | 32400 |
 | `service_tg_ws_proxy` | Telegram MTProto-прокси (WebSocket) | 1443 |
+| `service_registry` | Docker Registry — хранилище собственных образов | 5000 |
 | ~~service_ace_stream, service_ftp~~ | Отключены (закомментированы) | — |
 
 ### Как связаны media-сервисы
@@ -91,6 +92,35 @@ Settings → Indexers → `+` → выбери доступные торрент
 4. Новые файлы *arr подхватываются автоматически (планровщик сканирует библиотеки; форс — Dashboard → Libraries → Scan All Libraries).
 5. Аппаратное транскодирование (Intel QuickSync): раскомментируй `devices: /dev/dri:/dev/dri` в docker-compose.yml → `make up-media` → Dashboard → Playback → Transcoding → Hardware acceleration: Intel QuickSync.
 
+## Docker Registry (хранилище собственных образов)
+
+Поднят `registry:2` (порт 5000, данные в `folders/registry/`) — вместо тяжёлого Harbor: тот требует ~10 контейнеров (БД, redis, trivy), свой установщик и HTTPS-сертификаты. Если понадобятся UI/сканирование/репликация — Harbor ставится отдельным проектом по [официальной инструкции](https://goharbor.io/docs/2.12.0/install-config/).
+
+### Использование
+
+Registry работает по HTTP — на каждом docker-хосте-клиенте разреши insecure-registry и перезапусти docker:
+
+```json
+// /etc/docker/daemon.json (или Docker Desktop → Settings → Docker Engine)
+{ "insecure-registries": ["<IP-сервера>:5000"] }
+```
+
+Сборка и хранение своего образа:
+
+```bash
+docker build -t myapp .
+docker tag myapp <IP-сервера>:5000/myapp:latest
+docker push <IP-сервера>:5000/myapp:latest
+
+docker pull <IP-сервера>:5000/myapp:latest
+curl http://<IP-сервера>:5000/v2/_catalog    # что лежит в registry
+curl http://<IP-сервера>:5000/v2/myapp/tags/list
+```
+
+На сервере-хосте это уже настроено не будет автоматически — добавь `"insecure-registries": ["localhost:5000"]` в daemon.json и там, если хочешь push/pull с самого хоста.
+
+⚠️ Без аутентификации (как прежний Transmission): только доверенная LAN. Включается htpasswd-переменными `REGISTRY_AUTH*` при необходимости.
+
 ## Telegram-прокси (tg-ws-proxy)
 
 [FlowSeal/tg-ws-proxy](https://github.com/FlowSeal/tg-ws-proxy) — MTProto-прокси (WebSocket), чтобы Telegram работал в домашней сети. Образ собирается из GitHub при первом `make up-tg` (пин тега в docker-compose.yml).
@@ -137,6 +167,7 @@ make remove-dc                     # + база домена (все юзеры 
 make remove-nas                    # + все домашние каталоги и общая шара
 make remove-media                  # + все загрузки и медиатека media-стека
 make remove-tg                     # + Telegram-прокси (данных нет)
+make remove-registry              # + ВСЕ образы в registry
 make remove-plex                   # + медиатека
 
 # пользователи домена
