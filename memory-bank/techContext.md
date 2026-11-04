@@ -10,7 +10,7 @@
 - **MeTube** (alexta69/metube, порт 8081) — yt-dlp web-UI, /downloads = folders/metube/downloads; **SearXNG** (searxng/searxng, 8888→8080) — метапоисковик, settings автогенерация при первом старте
 - **Bazarr** (lscr.io/linuxserver/bazarr) — субтитры для media-стека, порт 6767, том /media; API Radarr/Sonarr через UI
 - **Ace Stream Engine 3.2.11** — кастомная сборка (ubuntu:22.04 base + официальный тарбл download.acestream.media/linux; cp310 => только 22.04), порт 6878, multi-stage (builder: apsw/lxml/PyNaCl/pycryptodome/isodate), healthcheck get_version
-- **Vaultwarden** (lscr.io/linuxserver/vaultwarden) — пароли (Bitwarden-совместимый), порт 8222, sqlite; HTTP для нативных клиентов/расширения, web-vault требует HTTPS; SIGNUPS_ALLOWED/ADMIN_TOKEN из .env
+- **Vaultwarden** (vaultwarden/server — официального образа у linuxserver.io нет, lscr.io-путь отвечал `denied` и валил весь make up) — пароли (Bitwarden-совместимый), порт 8222, sqlite; HTTP для нативных клиентов/расширения, web-vault требует HTTPS; SIGNUPS_ALLOWED/ADMIN_TOKEN из .env
 - **registry:2** — Docker Registry, порт 5000, HTTP (клиентам нужен insecure-registries в daemon.json), данные в folders/registry, без аутентификации (доверенная LAN; Harbor отклонён как overkill)
 - **tg-ws-proxy** (FlowSeal/tg-ws-proxy, MTProto over WebSocket) — Telegram-прокси, порт 1443; образ собирается из git-контекста с пином тега v1.11.4; секрет TG_WS_PROXY_SECRET в .env (пусто = random на каждый рестарт)
 - **Plex Media Server** — образ `lscr.io/linuxserver/plex:latest`, порт 32400

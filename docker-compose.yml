@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   # ============================================================
   # Samba AD DC — домен-контроллер (Active Directory)
@@ -225,16 +223,14 @@ services:
   # SIGNUPS_ALLOWED=false в .env. База (sqlite) — folders/vaultwarden/config
   # ============================================================
   service_vaultwarden:
-    image: lscr.io/linuxserver/vaultwarden:latest
+    image: vaultwarden/server:latest
     container_name: service_vaultwarden
     environment:
-      - PUID=1000
-      - PGID=1000
       - TZ=${TZ:-Europe/Moscow}
       - SIGNUPS_ALLOWED=${SIGNUPS_ALLOWED:-true}
       - ADMIN_TOKEN=${ADMIN_TOKEN:-}   # пусто = админ-панель /admin отключена
     volumes:
-      - ./folders/vaultwarden/config:/config
+      - ./folders/vaultwarden/config:/data
     ports:
       - 8222:80
     restart: always

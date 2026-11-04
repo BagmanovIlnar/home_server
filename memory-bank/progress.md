@@ -43,4 +43,5 @@
 - Затем переход на готовые образы linuxserver для Transmission и Plex (собственные Dockerfile'ы остались как артефакты)
 - Ace Stream: первая версия (HTTPAceProxy + acestream 3.1.74 на ubuntu:18.04, python2) была заброшена и закомментирована; вторая попытка на базе `vstavrinov/acestream-engine` тоже не доведена до конца
 - FTP-сервис был рабочей альтернативой файлового доступа, но вытеснен Samba и отключён
-- Убрана авторизация Transmission для удобства в домашней сети
+- 2024+: Убрана авторизация Transmission для удобства в домашней сети
+- 2025: Vaultwarden переведён на официальный образ vaultwarden/server (lscr.io/linuxserver/vaultwarden не существует — `denied` из registry валил весь make up); атрибут `version` удалён из docker-compose.yml

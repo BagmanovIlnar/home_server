@@ -203,7 +203,7 @@ curl http://<IP-сервера>:5000/v2/myapp/tags/list
 
 ## Vaultwarden (хранение паролей)
 
-Bitwarden-совместимый сервер (lscr.io/linuxserver/vaultwarden), порт `8222`, база sqlite + вложения в `folders/vaultwarden/config`.
+Bitwarden-совместимый сервер (`vaultwarden/server`; у linuxserver.io такого образа нет), порт `8222`, база sqlite + вложения в `folders/vaultwarden/config`.
 
 ### Подключение клиентов
 
