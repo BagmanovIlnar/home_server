@@ -74,9 +74,9 @@ down-plex: ## остановить Plex
 
 # ---------- СБОРКА ----------
 
-build: ## собрать все кастомные образы (dc + nas) и обновить готовые (pull)
+build: ## собрать кастомные образы (dc, nas, tg) и обновить готовые (pull)
 	docker compose build
-	docker compose pull $(MEDIA) $(PLEX)
+	docker compose pull $(MEDIA) $(PLEX) $(VW) $(REG)
 build-dc: ## собрать образ домен-контроллера
 	docker compose build $(DC)
 build-nas: ## собрать образ файлового сервера
