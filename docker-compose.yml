@@ -205,6 +205,27 @@ services:
     restart: always
 
   # ============================================================
+  # Vaultwarden — хранение паролей (Bitwarden-совместимый сервер)
+  # Клиенты (desktop/mobile/расширение браузера) работают по HTTP из LAN;
+  # web-vault требует HTTPS (см. README). После регистрации всех —
+  # SIGNUPS_ALLOWED=false в .env. База (sqlite) — folders/vaultwarden/config
+  # ============================================================
+  service_vaultwarden:
+    image: lscr.io/linuxserver/vaultwarden:latest
+    container_name: service_vaultwarden
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ:-Europe/Moscow}
+      - SIGNUPS_ALLOWED=${SIGNUPS_ALLOWED:-true}
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-}   # пусто = админ-панель /admin отключена
+    volumes:
+      - ./folders/vaultwarden/config:/config
+    ports:
+      - 8222:80
+    restart: always
+
+  # ============================================================
   # Медиасервер
   # ============================================================
   service_plex:

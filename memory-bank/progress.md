@@ -7,6 +7,7 @@
 - ~~✅ Управление пользователями: `bash/add_user.sh` (useradd + smbpasswd + каталог с правами 775), `bash/del_user.sh`~~ → заменено на доменные учётки через samba-tool
 - ~~✅ **Transmission** (linuxserver): web-UI на 9091 без авторизации, peer-порт 51413, watch-папка~~ → ЗАМЕНЁН на qBittorrent
 - ✅ **Media-стек** (linuxserver): qBittorrent (8080, peer 6881) + Radarr (7878) + Sonarr (8989) + Lidarr (8686) + Jellyfin (8096); связь через общие тома /downloads и /media + default-сеть compose; код написан, ждёт docker compose up
+- ✅ **Vaultwarden** service_vaultwarden (порт 8222, sqlite в folders/vaultwarden/config): Bitwarden-совместимый сервер паролей; клиенты по HTTP, web-vault требует HTTPS; ждёт docker compose up
 - ✅ **Docker Registry** service_registry (registry:2, порт 5000): хранилище собственных образов, без аутентификации (доверенная LAN); вместо Harbor (overkill). Ждёт docker compose up
 - ✅ **Telegram-прокси** service_tg_ws_proxy (FlowSeal/tg-ws-proxy v1.11.4, MTProto/WS, порт 1443): сборка из GitHub-контекста, секрет в .env; ждёт docker compose up
 - ✅ **Plex** (linuxserver): порт 32400, библиотека/фильмы/сериалы в `folders/plex_media_server/`, активирован (PLEX_CLAIM больше не нужен)

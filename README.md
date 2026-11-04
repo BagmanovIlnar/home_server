@@ -18,6 +18,7 @@
 | `service_plex` | Медиасервер | 32400 |
 | `service_tg_ws_proxy` | Telegram MTProto-прокси (WebSocket) | 1443 |
 | `service_registry` | Docker Registry — хранилище собственных образов | 5000 |
+| `service_vaultwarden` | Vaultwarden — пароли (Bitwarden-совместимый сервер) | 8222 |
 | ~~service_ace_stream, service_ftp~~ | Отключены (закомментированы) | — |
 
 ### Как связаны media-сервисы
@@ -121,6 +122,27 @@ curl http://<IP-сервера>:5000/v2/myapp/tags/list
 
 ⚠️ Без аутентификации (как прежний Transmission): только доверенная LAN. Включается htpasswd-переменными `REGISTRY_AUTH*` при необходимости.
 
+## Vaultwarden (хранение паролей)
+
+Bitwarden-совместимый сервер (lscr.io/linuxserver/vaultwarden), порт `8222`, база sqlite + вложения в `folders/vaultwarden/config`.
+
+### Подключение клиентов
+
+В каждом клиенте Bitwarden перед входом укажи self-hosted сервер `http://<IP-сервера>:8222`:
+
+- **Desktop / мобильные приложения:** Настройки аккаунта → «Сервер» → Self-hosted → URL сервера `http://<IP-сервера>:8222` → зарегистрируйся (Создать учётную запись).
+- **Расширение браузера:** значок шестерёнки → Self-hosted → тот же URL.
+- ⚠️ **Web-vault в браузере требует HTTPS** (Web Crypto API работает только в secure context) — по HTTP из LAN пользуйся приложениями/расширением. Понадобится web-vault — ставь reverse-proxy с TLS.
+
+### После регистрации всех членов семьи
+
+Запрети новые регистрации: в `.env` → `SIGNUPS_ALLOWED=false` → `make up-vaultwarden`.
+
+### Админ-панель и бэкап
+
+- `/admin` доступен только если задан `ADMIN_TOKEN` в `.env` (argon2-хэш: `docker run --rm -it vaultwarden/server /vaultwarden hash`).
+- ⚠️ **Бэкап обязателен**: потеря `folders/vaultwarden/config` = потеря всех паролей. Клиенты Bitwarden держат зашифрованную копию, пока устройство живо — но полагаться только на это нельзя. Хотя бы раз скопируй `folders/vaultwarden` на другой носитель.
+
 ## Telegram-прокси (tg-ws-proxy)
 
 [FlowSeal/tg-ws-proxy](https://github.com/FlowSeal/tg-ws-proxy) — MTProto-прокси (WebSocket), чтобы Telegram работал в домашней сети. Образ собирается из GitHub при первом `make up-tg` (пин тега в docker-compose.yml).
@@ -168,6 +190,7 @@ make remove-nas                    # + все домашние каталоги 
 make remove-media                  # + все загрузки и медиатека media-стека
 make remove-tg                     # + Telegram-прокси (данных нет)
 make remove-registry              # + ВСЕ образы в registry
+make remove-vaultwarden           # + база паролей ВСЕХ пользователей!
 make remove-plex                   # + медиатека
 
 # пользователи домена
