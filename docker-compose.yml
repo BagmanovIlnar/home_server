@@ -240,6 +240,39 @@ services:
     restart: always
 
   # ============================================================
+  # MeTube — web-UI для yt-dlp: качай видео с YouTube и 100+ сайтов
+  # Загрузки в folders/metube/downloads (в media-библиотеку — вручную)
+  # ============================================================
+  service_metube:
+    image: alexta69/metube:latest
+    container_name: service_metube
+    environment:
+      - TZ=${TZ:-Europe/Moscow}
+     # - USER=ilnar          # включить basic-auth (пары USER+PASS)
+     # - PASS=Str0ng_Pass!
+    volumes:
+      - ./folders/metube/downloads:/downloads
+    ports:
+      - 8081:8081
+    restart: always
+
+  # ============================================================
+  # SearXNG — приватный метапоисковик (без трекинга)
+  # settings.yml создаётся автоматически при первом старте
+  # ============================================================
+  service_searxng:
+    image: searxng/searxng:latest
+    container_name: service_searxng
+    environment:
+      - TZ=${TZ:-Europe/Moscow}
+      - SEARXNG_BASE_URL=${SEARXNG_BASE_URL:-http://localhost:8888/}
+    volumes:
+      - ./folders/searxng:/etc/searxng
+    ports:
+      - 8888:8080
+    restart: always
+
+  # ============================================================
   # Медиасервер
   # ============================================================
   service_plex:

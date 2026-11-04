@@ -21,6 +21,8 @@
 | `service_registry` | Docker Registry — хранилище собственных образов | 5000 |
 | `service_vaultwarden` | Vaultwarden — пароли (Bitwarden-совместимый сервер) | 8222 |
 | `service_acestream` | Ace Stream Engine 3.2.11 — p2p-стриминг | 6878 |
+| `service_metube` | MeTube — загрузка видео с YouTube и 100+ сайтов (yt-dlp) | 8081 |
+| `service_searxng` | SearXNG — приватный метапоисковик | 8888 |
 | ~~service_ftp~~ | Отключён (закомментирован) | — |
 
 ### Как связаны media-сервисы
@@ -50,7 +52,7 @@ make logs   # ждать "provisioned" у service_samba_addc и статуса h
 
 ```bash
 # запуск / остановка / сборка: весь стек или по группе
-# (up-dc, up-nas, up-plex, up-media, up-tg, up-registry, up-vaultwarden, up-acestream)
+# (up-dc, up-nas, up-plex, up-media, up-tg, up-registry, up-vaultwarden, up-acestream, up-metube, up-searxng)
 make up / down / build            # весь стек (down = только остановка, данные живы)
 make up-nas / down-nas / build-dc # конкретный сервис
 
@@ -63,6 +65,8 @@ make remove-tg                     # + Telegram-прокси (данных не�
 make remove-registry              # + ВСЕ образы в registry
 make remove-vaultwarden           # + база паролей ВСЕХ пользователей!
 make remove-acestream             # + кэш стримов
+make remove-metube                # + все загруженные видео
+make remove-searxng               # + настройки поиска
 make remove-plex                   # + медиатека
 
 # пользователи домена
@@ -223,6 +227,19 @@ Bitwarden-совместимый сервер (lscr.io/linuxserver/vaultwarden),
 - Кэш и настройки — `folders/acestream/` (переживают рестарт).
 
 Обновление версии: поменять `ACESTREAM_URL` в `services/acestream/Dockerfile` на свежий тарбл с [download.acestream.media/linux](https://download.acestream.media/linux/) → `make build-acestream && make up-acestream`.
+
+## MeTube (загрузка видео)
+
+Web-UI для yt-dlp (`alexta69/metube`), порт `8081`. Вставляешь ссылку с YouTube/[сотен сайтов](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md) — видео качается в `folders/metube/downloads` (в медиатеку Jellyfin/Plex — переносом вручную или настрой `OUTPUT_TEMPLATE` в compose).
+
+Basic-авторизация (если в LAN есть посторонние): раскомментируй `USER`/`PASS` в docker-compose.yml → `make up-metube`.
+
+## SearXNG (приватный поиск)
+
+Метапоисковик (`searxng/searxng`), порт `8888` — агрегирует Google/Bing/DuckDuckGo и др., без трекинга и рекламы. Просто открой `http://<IP-сервера>:8888` и укажи адрес как поисковую систему в браузере (открой `:8888/preferences` → «Ваш браузер» — там готовые ссылки-подсказки).
+
+- Настройки: `folders/searxng/settings.yml` (создаётся автоматически при первом старте, включая секретный ключ — каталог уже не переноси с чужими ключами между инсталляциями).
+- В `.env` можно задать `SEARXNG_BASE_URL=http://<IP-сервера>:8888/` — чтобы ссылки «поделиться» были правильными.
 
 ## Telegram-прокси (tg-ws-proxy)
 
