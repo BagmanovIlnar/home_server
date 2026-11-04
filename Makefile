@@ -17,14 +17,15 @@ PLEX := service_plex
 TG   := service_tg_ws_proxy
 REG  := service_registry
 VW   := service_vaultwarden
+ACE  := service_acestream
 MEDIA := service_qbittorrent service_radarr service_sonarr service_lidarr service_jellyfin
 
 .DEFAULT_GOAL := help
 .PHONY: help env \
-  up up-dc up-nas up-plex up-media up-tg up-registry up-vaultwarden \
-  down down-dc down-nas down-plex down-media down-tg down-registry down-vaultwarden \
-  build build-dc build-nas build-plex build-media build-tg build-registry build-vaultwarden \
-  remove remove-dc remove-nas remove-plex remove-media remove-tg remove-registry remove-vaultwarden \
+  up up-dc up-nas up-plex up-media up-tg up-registry up-vaultwarden up-acestream \
+  down down-dc down-nas down-plex down-media down-tg down-registry down-vaultwarden down-acestream \
+  build build-dc build-nas build-plex build-media build-tg build-registry build-vaultwarden build-acestream \
+  remove remove-dc remove-nas remove-plex remove-media remove-tg remove-registry remove-vaultwarden remove-acestream \
   logs ps users user-add user-del user-pass
 
 help: ## показать эту справку
@@ -42,6 +43,8 @@ up-dc: ## запустить только домен-контроллер
 	docker compose up -d $(DC)
 up-nas: ## запустить только файловый сервер (потребует DC)
 	docker compose up -d $(NAS)
+up-acestream: ## запустить Ace Stream Engine (первый запуск — сборка ~5 мин)
+	docker compose up -d $(ACE)
 up-vaultwarden: ## запустить Vaultwarden (пароли)
 	docker compose up -d $(VW)
 up-registry: ## запустить Docker Registry (хранилище образов)
@@ -61,6 +64,8 @@ down-dc: ## остановить домен-контроллер
 	docker compose stop $(DC)
 down-nas: ## остановить файловый сервер
 	docker compose stop $(NAS)
+down-acestream: ## остановить Ace Stream Engine
+	docker compose stop $(ACE)
 down-vaultwarden: ## остановить Vaultwarden
 	docker compose stop $(VW)
 down-registry: ## остановить Docker Registry
@@ -83,6 +88,8 @@ build-nas: ## собрать образ файлового сервера
 	docker compose build $(NAS)
 build-plex: ## скачать/обновить готовый образ Plex (pull)
 	docker compose pull $(PLEX)
+build-acestream: ## пересобрать образ Ace Stream Engine (обновление версии — ACESTREAM_URL в Dockerfile)
+	docker compose build $(ACE)
 build-vaultwarden: ## скачать/обновить образ Vaultwarden
 	docker compose pull $(VW)
 build-registry: ## скачать/обновить образ registry
@@ -100,11 +107,11 @@ remove: ## !!! удалить ВЕСЬ стек: контейнеры, обра�
 	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить ВЕСЬ стек БЕЗВОЗВРАТНО (контейнеры, образы, volume, данные)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
 	docker compose down --rmi all --volumes --remove-orphans
 	rm -rf folders/samba_addc folders/users folders/share folders/transmission folders/plex_media_server \
-	  folders/qbittorrent folders/radarr folders/sonarr folders/lidarr folders/jellyfin folders/media folders/registry folders/vaultwarden
+	  folders/qbittorrent folders/radarr folders/sonarr folders/lidarr folders/jellyfin folders/media folders/registry folders/vaultwarden folders/acestream
 	mkdir -p folders/samba_addc/etc folders/samba_addc/lib folders/users folders/share \
 	  folders/plex_media_server/library folders/plex_media_server/movies folders/plex_media_server/tvseries \
 	  folders/qbittorrent/config folders/qbittorrent/downloads folders/radarr/config folders/sonarr/config \
-	  folders/lidarr/config folders/jellyfin/config folders/media/movies folders/media/tv folders/media/music folders/registry folders/vaultwarden/config
+	  folders/lidarr/config folders/jellyfin/config folders/media/movies folders/media/tv folders/media/music folders/registry folders/vaultwarden/config folders/acestream
 	@echo "OK: стек удалён полностью (контейнеры, образы, volume, сеть, данные)"
 
 remove-dc: ## !!! удалить DC полностью: контейнер, образ, volume, БАЗУ ДОМЕНА (folders/samba_addc)
@@ -168,6 +175,15 @@ remove-vaultwarden: ## !!! удалить Vaultwarden полностью: кон
 	rm -rf folders/vaultwarden; \
 	mkdir -p folders/vaultwarden/config; \
 	echo "OK: $(VW) удалён полностью (контейнер, образ, база паролей)"
+
+remove-acestream: ## !!! удалить Ace Stream полностью: контейнер, образ, кэш (folders/acestream)
+	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(ACE) БЕЗВОЗВРАТНО (контейнер, образ, кэш стримов)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
+	@img=$$(docker compose images -q $(ACE) 2>/dev/null); \
+	docker compose rm -sfv $(ACE); \
+	if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
+	rm -rf folders/acestream; \
+	mkdir -p folders/acestream; \
+	echo "OK: $(ACE) удалён полностью (контейнер, образ, кэш)"
 
 # ---------- СТАТУС / ЛОГИ ----------
 

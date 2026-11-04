@@ -246,18 +246,30 @@ services:
     ports:
       - 32400:32400
 
-  #service_ace_stream:
-  #  restart: always
-  #  container_name: service_ace_stream
-  #  build:
-  #    context: ./services/ace-stream
-  #  networks:
-  #    network_service:
-  #  ports:
-  #    - 6878:6878
-  #    - 8621:8621
-  #    - 8621:8621/udp
-  #    - 8000:8000
+  # ============================================================
+  # Ace Stream Engine 3.2.11 — p2p-стриминг (сборка из базового
+  # ubuntu:22.04 + официальный тарбл движка, см. services/acestream/)
+  # HTTP API + встроенный web-плеер: http://<IP>:6878/webui/player/
+  # Кэш/конфиг в folders/acestream
+  # ============================================================
+  service_acestream:
+    restart: always
+    container_name: service_acestream
+    build:
+      context: ./services/acestream
+    environment:
+      - TZ=${TZ:-Europe/Moscow}
+    volumes:
+      - ./folders/acestream:/root/.AceStream
+    ports:
+      - 6878:6878
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs 'http://127.0.0.1:6878/webui/api/service?method=get_version' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
   #service_ftp:
   #  restart: always
   #  container_name: service_ftp1

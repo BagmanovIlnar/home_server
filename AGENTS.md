@@ -11,5 +11,5 @@
 - После значимых изменений обновляй `memory-bank/activeContext.md` и `memory-bank/progress.md`
 - Ничего из `folders/` и `.env` не коммитить (там данные и секреты)
 - Пользователи домена — только через `make user-add` / `make user-del` (samba-tool, см. Makefile)
-- Сервисы ace-stream и ftp в docker-compose.yml закомментированы — они НЕ активны
+- Сервис ftp в docker-compose.yml закомментирован — он НЕ активен (ace-stream переписан и активен: service_acestream)
 - Ответы и документация — на русском

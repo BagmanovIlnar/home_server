@@ -19,7 +19,8 @@
 | `service_tg_ws_proxy` | Telegram MTProto-прокси (WebSocket) | 1443 |
 | `service_registry` | Docker Registry — хранилище собственных образов | 5000 |
 | `service_vaultwarden` | Vaultwarden — пароли (Bitwarden-совместимый сервер) | 8222 |
-| ~~service_ace_stream, service_ftp~~ | Отключены (закомментированы) | — |
+| `service_acestream` | Ace Stream Engine 3.2.11 — p2p-стриминг | 6878 |
+| ~~service_ftp~~ | Отключён (закомментирован) | — |
 
 ### Как связаны media-сервисы
 
@@ -47,7 +48,7 @@ make logs   # ждать "provisioned" у service_samba_addc и статуса h
 
 ```bash
 # запуск / остановка / сборка: весь стек или по группе
-# (up-dc, up-nas, up-plex, up-media, up-tg, up-registry, up-vaultwarden)
+# (up-dc, up-nas, up-plex, up-media, up-tg, up-registry, up-vaultwarden, up-acestream)
 make up / down / build            # весь стек (down = только остановка, данные живы)
 make up-nas / down-nas / build-dc # конкретный сервис
 
@@ -59,6 +60,7 @@ make remove-media                  # + все загрузки и медиате
 make remove-tg                     # + Telegram-прокси (данных нет)
 make remove-registry              # + ВСЕ образы в registry
 make remove-vaultwarden           # + база паролей ВСЕХ пользователей!
+make remove-acestream             # + кэш стримов
 make remove-plex                   # + медиатека
 
 # пользователи домена
@@ -199,6 +201,19 @@ Bitwarden-совместимый сервер (lscr.io/linuxserver/vaultwarden),
 
 - `/admin` доступен только если задан `ADMIN_TOKEN` в `.env` (argon2-хэш: `docker run --rm -it vaultwarden/server /vaultwarden hash`).
 - ⚠️ **Бэкап обязателен**: потеря `folders/vaultwarden/config` = потеря всех паролей. Клиенты Bitwarden держат зашифрованную копию, пока устройство живо — но полагаться только на это нельзя. Хотя бы раз скопируй `folders/vaultwarden` на другой носитель.
+
+## Ace Stream Engine (p2p-стриминг)
+
+Движок **3.2.11** (последняя версия), собирается из базового `ubuntu:22.04` + официальный тарбл `download.acestream.media` (см. `services/acestream/Dockerfile`; база 22.04 обязательна — движок бинарно привязан к python 3.10). Первый `make up-acestream` собирает ~5 минут.
+
+### Использование
+
+- **Встроенный web-плеер:** `http://<IP-сервера>:6878/webui/player/` — вставляешь `acestream://`-ссылку или content-id, играется прямо в браузере.
+- **HTTP API (VLC/mplayers):** `http://<IP-сервера>:6878/ace/getstream?id=<content-id>` — отдает прямой поток (hls: `/ace/getstream/…?format=hls`).
+- Проверка живости: `curl 'http://<IP>:6878/webui/api/service?method=get_version'` (он же — healthcheck в compose).
+- Кэш и настройки — `folders/acestream/` (переживают рестарт).
+
+Обновление версии: поменять `ACESTREAM_URL` в `services/acestream/Dockerfile` на свежий тарбл с [download.acestream.media/linux](https://download.acestream.media/linux/) → `make build-acestream && make up-acestream`.
 
 ## Telegram-прокси (tg-ws-proxy)
 
