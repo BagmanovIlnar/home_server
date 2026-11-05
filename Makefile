@@ -18,6 +18,7 @@ TG   := service_tg_ws_proxy
 REG  := service_registry
 VW   := service_vaultwarden
 ACE  := service_acestream
+ACEP := service_acestream_proxy service_acestream_web
 MT   := service_metube
 SXNG := service_searxng
 PT   := service_portainer
@@ -25,10 +26,10 @@ MEDIA := service_qbittorrent service_radarr service_sonarr service_lidarr servic
 
 .DEFAULT_GOAL := help
 .PHONY: help env \
-  up up-dc up-nas up-plex up-media up-tg up-registry up-vaultwarden up-acestream up-metube up-searxng up-portainer \
-  down down-dc down-nas down-plex down-media down-tg down-registry down-vaultwarden down-acestream down-metube down-searxng down-portainer \
-  build build-dc build-nas build-plex build-media build-tg build-registry build-vaultwarden build-acestream build-metube build-searxng build-portainer \
-  remove remove-dc remove-nas remove-plex remove-media remove-tg remove-registry remove-vaultwarden remove-acestream remove-metube remove-searxng remove-portainer \
+  up up-dc up-nas up-plex up-media up-tg up-registry up-vaultwarden up-acestream up-aceproxy up-metube up-searxng up-portainer \
+  down down-dc down-nas down-plex down-media down-tg down-registry down-vaultwarden down-acestream down-aceproxy down-metube down-searxng down-portainer \
+  build build-dc build-nas build-plex build-media build-tg build-registry build-vaultwarden build-acestream build-aceproxy build-metube build-searxng build-portainer \
+  remove remove-dc remove-nas remove-plex remove-media remove-tg remove-registry remove-vaultwarden remove-acestream remove-aceproxy remove-metube remove-searxng remove-portainer \
   logs ps users user-add user-del user-pass
 
 help: ## показать эту справку
@@ -54,6 +55,8 @@ up-searxng: ## запустить SearXNG (приватный поиск)
 	docker compose up -d $(SXNG)
 up-acestream: ## запустить Ace Stream Engine (первый запуск — сборка ~5 мин)
 	docker compose up -d $(ACE)
+up-aceproxy: ## запустить Ace Stream Proxy + Web UI (сборка из github при первом запуске)
+	docker compose up -d $(ACEP)
 up-vaultwarden: ## запустить Vaultwarden (пароли)
 	docker compose up -d $(VW)
 up-registry: ## запустить Docker Registry (хранилище образов)
@@ -81,6 +84,8 @@ down-searxng: ## остановить SearXNG
 	docker compose stop $(SXNG)
 down-acestream: ## остановить Ace Stream Engine
 	docker compose stop $(ACE)
+down-aceproxy: ## остановить Ace Stream Proxy + Web UI
+	docker compose stop $(ACEP)
 down-vaultwarden: ## остановить Vaultwarden
 	docker compose stop $(VW)
 down-registry: ## остановить Docker Registry
@@ -111,6 +116,8 @@ build-searxng: ## скачать/обновить образ SearXNG
 	docker compose pull $(SXNG)
 build-acestream: ## пересобрать образ Ace Stream Engine (обновление версии — ACESTREAM_URL в Dockerfile)
 	docker compose build $(ACE)
+build-aceproxy: ## пересобрать образы Ace Stream Proxy + Web UI из github
+	docker compose build $(ACEP)
 build-vaultwarden: ## скачать/обновить образ Vaultwarden
 	docker compose pull $(VW)
 build-registry: ## скачать/обновить образ registry
@@ -197,6 +204,14 @@ remove-vaultwarden: ## !!! удалить Vaultwarden полностью: кон
 	rm -rf folders/vaultwarden; \
 	mkdir -p folders/vaultwarden/config; \
 	echo "OK: $(VW) удалён полностью (контейнер, образ, база паролей)"
+
+remove-aceproxy: ## !!! удалить Ace Stream Proxy + Web UI полностью: контейнеры, образы (данных нет)
+	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(ACEP) (контейнеры + образы)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
+	@for s in $(ACEP); do \
+		img=$$(docker compose images -q $$s 2>/dev/null); \
+		docker compose rm -sfv $$s; \
+		if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
+	done; echo "OK: $(ACEP) удалены (контейнеры, образы)"
 
 remove-acestream: ## !!! удалить Ace Stream полностью: контейнер, образ, кэш (folders/acestream)
 	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(ACE) БЕЗВОЗВРАТНО (контейнер, образ, кэш стримов)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi

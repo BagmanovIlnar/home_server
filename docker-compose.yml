@@ -327,6 +327,43 @@ services:
       retries: 3
       start_period: 60s
 
+  # ============================================================
+  # Ace Stream Proxy — прокси над движком (сборка из github):
+  # шаринг сессий движка между устройствами, HLS/TS-раздача,
+  # транскод для браузера, REST API + Swagger (:8085/swagger-ui)
+  # Плейлист каналов — ACESTREAM_PLAYLIST_URL в .env (опционально)
+  # ============================================================
+  service_acestream_proxy:
+    restart: always
+    container_name: service_acestream_proxy
+    build:
+      context: https://github.com/BagmanovIlnar/acestream-proxy.git
+    depends_on:
+      - service_acestream
+    environment:
+      - TZ=${TZ:-Europe/Moscow}
+      - ENGINE_URL=http://service_acestream:6878
+      - PLAYLIST_URL=${ACESTREAM_PLAYLIST_URL:-}
+    ports:
+      - 8085:8080
+
+  # ============================================================
+  # Ace Stream Web UI — веб-интерфейс к прокси (сборка из github,
+  # nginx): список каналов/стримов, плеер в браузере.
+  # API и потоки проксирует на service_acestream_proxy (same-origin)
+  # ============================================================
+  service_acestream_web:
+    restart: always
+    container_name: service_acestream_web
+    build:
+      context: https://github.com/BagmanovIlnar/acestream-proxy-web-ui.git
+    depends_on:
+      - service_acestream_proxy
+    environment:
+      - PROXY_URL=http://service_acestream_proxy:8080
+    ports:
+      - 8086:80
+
   #service_ftp:
   #  restart: always
   #  container_name: service_ftp1

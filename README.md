@@ -21,6 +21,8 @@
 | `service_registry` | Docker Registry — хранилище собственных образов | 5000 |
 | `service_vaultwarden` | Vaultwarden — пароли (Bitwarden-совместимый сервер) | 8222 |
 | `service_acestream` | Ace Stream Engine 3.2.11 — p2p-стриминг | 6878 |
+| `service_acestream_proxy` | Ace Stream Proxy — шаринг сессий движка, HLS/TS, транскод | 8085 |
+| `service_acestream_web` | Ace Stream Web UI — веб-интерфейс к прокси | 8086 |
 | `service_metube` | MeTube — загрузка видео с YouTube и 100+ сайтов (yt-dlp) → /media/youtube | 8081 |
 | `service_searxng` | SearXNG — приватный метапоисковик | 8888 |
 | `service_portainer` | Portainer — web-UI управления Docker | 9443 |
@@ -54,7 +56,7 @@ make logs   # ждать "provisioned" у service_samba_addc и статуса h
 
 ```bash
 # запуск / остановка / сборка: весь стек или по группе
-# (up-dc, up-nas, up-plex, up-media, up-tg, up-registry, up-vaultwarden, up-acestream, up-metube, up-searxng, up-portainer)
+# (up-dc, up-nas, up-plex, up-media, up-tg, up-registry, up-vaultwarden, up-acestream, up-aceproxy, up-metube, up-searxng, up-portainer)
 make up / down / build            # весь стек (down = только остановка, данные живы)
 make up-nas / down-nas / build-dc # конкретный сервис
 
@@ -67,6 +69,7 @@ make remove-tg                     # + Telegram-прокси (данных не�
 make remove-registry              # + ВСЕ образы в registry
 make remove-vaultwarden           # + база паролей ВСЕХ пользователей!
 make remove-acestream             # + кэш стримов
+make remove-aceproxy              # + Ace Stream Proxy/Web UI (данных нет)
 make remove-metube                # + все загруженные видео
 make remove-searxng               # + настройки поиска
 make remove-portainer             # + настройки и учётки Portainer
@@ -234,6 +237,21 @@ Bitwarden-совместимый сервер (`vaultwarden/server`; у linuxser
 - Кэш и настройки — `folders/acestream/` (переживают рестарт).
 
 Обновление версии: поменять `ACESTREAM_URL` в `services/acestream/Dockerfile` на свежий тарбл с [download.acestream.media/linux](https://download.acestream.media/linux/) → `make build-acestream && make up-acestream`.
+
+## Ace Stream Proxy + Web UI (мультиэкранный просмотр)
+
+Пара сервисов поверх движка (собираются из github: [acestream-proxy](https://github.com/BagmanovIlnar/acestream-proxy), [acestream-proxy-web-ui](https://github.com/BagmanovIlnar/acestream-proxy-web-ui)):
+
+- `service_acestream_proxy` (:8085) — шаринг сессий движка (N устройств на одной трансляции = 1 сессия), TS/HLS-раздача для VLC/ТВ, транскод в h264+aac для браузера, плейлист `http://<IP>:8085/playlist.m3u`, REST API + Swagger: `http://<IP>:8085/swagger-ui`.
+- `service_acestream_web` (:8086) — веб-интерфейс: список каналов, активные стримы, плеер в браузере; API и потоки проксирует на прокси (same-origin).
+
+Связь: `proxy → http://service_acestream:6878` (ENGINE_URL), `web → http://service_acestream_proxy:8080` (PROXY_URL) — по именам сервисов в общей сети compose.
+
+```bash
+make up-aceproxy        # запуск (первый — сборка из github)
+```
+
+Плейлист каналов (m3u с `group-title`): `ACESTREAM_PLAYLIST_URL=...` в `.env` → каналы появятся в Web UI и `/playlist.m3u`.
 
 ## MeTube (загрузка видео)
 
