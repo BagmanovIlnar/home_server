@@ -56,7 +56,7 @@ make logs   # ждать "provisioned" у service_samba_addc и статуса h
 
 ```bash
 # запуск / остановка / сборка: весь стек или по группе
-# (up-dc, up-nas, up-plex, up-media, up-tg, up-registry, up-vaultwarden, up-acestream, up-aceproxy, up-metube, up-searxng, up-portainer)
+# (up-dc, up-nas, up-plex, up-media, up-tg, up-registry, up-vaultwarden, up-acestream, up-metube, up-searxng, up-portainer)
 make up / down / build            # весь стек (down = только остановка, данные живы)
 make up-nas / down-nas / build-dc # конкретный сервис
 
@@ -68,8 +68,7 @@ make remove-media                  # + все загрузки и медиате
 make remove-tg                     # + Telegram-прокси (данных нет)
 make remove-registry              # + ВСЕ образы в registry
 make remove-vaultwarden           # + база паролей ВСЕХ пользователей!
-make remove-acestream             # + кэш стримов
-make remove-aceproxy              # + Ace Stream Proxy/Web UI (данных нет)
+make remove-acestream             # + кэш стримов (движок + Proxy + Web UI)
 make remove-metube                # + все загруженные видео
 make remove-searxng               # + настройки поиска
 make remove-portainer             # + настройки и учётки Portainer
@@ -248,7 +247,7 @@ Bitwarden-совместимый сервер (`vaultwarden/server`; у linuxser
 Связь: `proxy → http://service_acestream:6878` (ENGINE_URL), `web → http://service_acestream_proxy:8080` (PROXY_URL) — по именам сервисов в общей сети compose.
 
 ```bash
-make up-aceproxy        # запуск (первый — сборка из github)
+make up-acestream        # запуск всей связки: движок + Proxy + Web UI (первый — сборка)
 ```
 
 Плейлист каналов (m3u с `group-title`): `ACESTREAM_PLAYLIST_URL=...` в `.env` → каналы появятся в Web UI и `/playlist.m3u`.

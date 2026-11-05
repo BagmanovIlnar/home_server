@@ -19,6 +19,7 @@ REG  := service_registry
 VW   := service_vaultwarden
 ACE  := service_acestream
 ACEP := service_acestream_proxy service_acestream_web
+ACEALL := $(ACE) $(ACEP)
 MT   := service_metube
 SXNG := service_searxng
 PT   := service_portainer
@@ -26,10 +27,10 @@ MEDIA := service_qbittorrent service_radarr service_sonarr service_lidarr servic
 
 .DEFAULT_GOAL := help
 .PHONY: help env \
-  up up-dc up-nas up-plex up-media up-tg up-registry up-vaultwarden up-acestream up-aceproxy up-metube up-searxng up-portainer \
-  down down-dc down-nas down-plex down-media down-tg down-registry down-vaultwarden down-acestream down-aceproxy down-metube down-searxng down-portainer \
-  build build-dc build-nas build-plex build-media build-tg build-registry build-vaultwarden build-acestream build-aceproxy build-metube build-searxng build-portainer \
-  remove remove-dc remove-nas remove-plex remove-media remove-tg remove-registry remove-vaultwarden remove-acestream remove-aceproxy remove-metube remove-searxng remove-portainer \
+  up up-dc up-nas up-plex up-media up-tg up-registry up-vaultwarden up-acestream up-metube up-searxng up-portainer \
+  down down-dc down-nas down-plex down-media down-tg down-registry down-vaultwarden down-acestream down-metube down-searxng down-portainer \
+  build build-dc build-nas build-plex build-media build-tg build-registry build-vaultwarden build-acestream build-metube build-searxng build-portainer \
+  remove remove-dc remove-nas remove-plex remove-media remove-tg remove-registry remove-vaultwarden remove-acestream remove-metube remove-searxng remove-portainer \
   logs ps users user-add user-del user-pass
 
 help: ## показать эту справку
@@ -53,10 +54,8 @@ up-metube: ## запустить MeTube (загрузка видео с YouTube 
 	docker compose up -d $(MT)
 up-searxng: ## запустить SearXNG (приватный поиск)
 	docker compose up -d $(SXNG)
-up-acestream: ## запустить Ace Stream Engine (первый запуск — сборка ~5 мин)
-	docker compose up -d $(ACE)
-up-aceproxy: ## запустить Ace Stream Proxy + Web UI (сборка из github при первом запуске)
-	docker compose up -d $(ACEP)
+up-acestream: ## запустить Ace Stream: движок + Proxy + Web UI (первый запуск — сборка ~5 мин)
+	docker compose up -d $(ACEALL)
 up-vaultwarden: ## запустить Vaultwarden (пароли)
 	docker compose up -d $(VW)
 up-registry: ## запустить Docker Registry (хранилище образов)
@@ -82,10 +81,8 @@ down-metube: ## остановить MeTube
 	docker compose stop $(MT)
 down-searxng: ## остановить SearXNG
 	docker compose stop $(SXNG)
-down-acestream: ## остановить Ace Stream Engine
-	docker compose stop $(ACE)
-down-aceproxy: ## остановить Ace Stream Proxy + Web UI
-	docker compose stop $(ACEP)
+down-acestream: ## остановить Ace Stream (движок + Proxy + Web UI)
+	docker compose stop $(ACEALL)
 down-vaultwarden: ## остановить Vaultwarden
 	docker compose stop $(VW)
 down-registry: ## остановить Docker Registry
@@ -114,10 +111,8 @@ build-metube: ## скачать/обновить образ MeTube
 	docker compose pull $(MT)
 build-searxng: ## скачать/обновить образ SearXNG
 	docker compose pull $(SXNG)
-build-acestream: ## пересобрать образ Ace Stream Engine (обновление версии — ACESTREAM_URL в Dockerfile)
-	docker compose build $(ACE)
-build-aceproxy: ## пересобрать образы Ace Stream Proxy + Web UI из github
-	docker compose build $(ACEP)
+build-acestream: ## пересобрать образы Ace Stream (движок: версия — ACESTREAM_URL; proxy/web: обновление из github)
+	docker compose build $(ACEALL)
 build-vaultwarden: ## скачать/обновить образ Vaultwarden
 	docker compose pull $(VW)
 build-registry: ## скачать/обновить образ registry
@@ -205,22 +200,16 @@ remove-vaultwarden: ## !!! удалить Vaultwarden полностью: кон
 	mkdir -p folders/vaultwarden/config; \
 	echo "OK: $(VW) удалён полностью (контейнер, образ, база паролей)"
 
-remove-aceproxy: ## !!! удалить Ace Stream Proxy + Web UI полностью: контейнеры, образы (данных нет)
-	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(ACEP) (контейнеры + образы)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
-	@for s in $(ACEP); do \
+remove-acestream: ## !!! удалить Ace Stream полностью (движок + Proxy + Web UI): контейнеры, образы, кэш (folders/acestream)
+	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(ACEALL) БЕЗВОЗВРАТНО (контейнеры, образы, кэш стримов)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
+	@for s in $(ACEALL); do \
 		img=$$(docker compose images -q $$s 2>/dev/null); \
 		docker compose rm -sfv $$s; \
 		if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
-	done; echo "OK: $(ACEP) удалены (контейнеры, образы)"
-
-remove-acestream: ## !!! удалить Ace Stream полностью: контейнер, образ, кэш (folders/acestream)
-	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(ACE) БЕЗВОЗВРАТНО (контейнер, образ, кэш стримов)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
-	@img=$$(docker compose images -q $(ACE) 2>/dev/null); \
-	docker compose rm -sfv $(ACE); \
-	if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
+	done; \
 	rm -rf folders/acestream; \
 	mkdir -p folders/acestream; \
-	echo "OK: $(ACE) удалён полностью (контейнер, образ, кэш)"
+	echo "OK: $(ACEALL) удалены полностью (контейнеры, образы, кэш)"
 
 remove-metube: ## !!! удалить MeTube полностью: контейнер, образ, ВСЕ загруженные видео (/media/youtube)
 	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(MT) БЕЗВОЗВРАТНО (контейнер, образ, ВСЕ видео в folders/media/youtube)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
