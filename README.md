@@ -250,7 +250,7 @@ Bitwarden-совместимый сервер (`vaultwarden/server`; у linuxser
 make up-acestream        # запуск всей связки: движок + Proxy + Web UI (первый — сборка)
 ```
 
-**Плейлист каналов**: по умолчанию прокси читает файл `folders/acestream/playlist.m3u` (положи m3u с `group-title` на хосте — группы появятся в Web UI и `/playlist.m3u`). Альтернатива — url провайдера: `ACESTREAM_PLAYLIST_URL=http(s)://...` в `.env` (обновляется каждые `PLAYLIST_REFRESH_SECS`, 30 мин).
+**Плейлист каналов**: не настроен — каналы запускаются вручную (content-id / `acestream://`-ссылка в Web UI). Понадобится список каналов — верни одну строку в environment сервиса: `ACESTREAM_PLAYLIST_URL=file:///data/playlist.m3u` (+ том `./folders/acestream:/data:ro`) или url провайдера `http(s)://...`.
 
 ## MeTube (загрузка видео)
 
