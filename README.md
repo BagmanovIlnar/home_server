@@ -244,13 +244,13 @@ Bitwarden-совместимый сервер (`vaultwarden/server`; у linuxser
 - `service_acestream_proxy` (:8085) — шаринг сессий движка (N устройств на одной трансляции = 1 сессия), TS/HLS-раздача для VLC/ТВ, транскод в h264+aac для браузера, плейлист `http://<IP>:8085/playlist.m3u`, REST API + Swagger: `http://<IP>:8085/swagger-ui`.
 - `service_acestream_web` (:8086) — веб-интерфейс: список каналов, активные стримы, плеер в браузере; API и потоки проксирует на прокси (same-origin).
 
-Связь: `proxy → http://service_acestream:6878` (ENGINE_URL), `web → http://service_acestream_proxy:8080` (PROXY_URL) — по именам сервисов в общей сети compose.
+Связь: `proxy → http://service_acestream:6878` (ACESTREAM_URI), `web → http://service_acestream_proxy:8080` (PROXY_URL) — по именам сервисов в общей сети compose.
 
 ```bash
 make up-acestream        # запуск всей связки: движок + Proxy + Web UI (первый — сборка)
 ```
 
-Плейлист каналов (m3u с `group-title`): `ACESTREAM_PLAYLIST_URL=...` в `.env` → каналы появятся в Web UI и `/playlist.m3u`.
+**Плейлист каналов**: по умолчанию прокси читает файл `folders/acestream/playlist.m3u` (положи m3u с `group-title` на хосте — группы появятся в Web UI и `/playlist.m3u`). Альтернатива — url провайдера: `ACESTREAM_PLAYLIST_URL=http(s)://...` в `.env` (обновляется каждые `PLAYLIST_REFRESH_SECS`, 30 мин).
 
 ## MeTube (загрузка видео)
 

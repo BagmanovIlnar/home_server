@@ -331,7 +331,8 @@ services:
   # Ace Stream Proxy — прокси над движком (сборка из github):
   # шаринг сессий движка между устройствами, HLS/TS-раздача,
   # транскод для браузера, REST API + Swagger (:8085/swagger-ui)
-  # Плейлист каналов — ACESTREAM_PLAYLIST_URL в .env (опционально)
+  # Плейлист: по умолчанию файл folders/acestream/playlist.m3u
+  # (кладём на хосте), либо ACESTREAM_PLAYLIST_URL=http(s)://... в .env
   # ============================================================
   service_acestream_proxy:
     restart: always
@@ -342,8 +343,10 @@ services:
       - service_acestream
     environment:
       - TZ=${TZ:-Europe/Moscow}
-      - ENGINE_URL=http://service_acestream:6878
-      - PLAYLIST_URL=${ACESTREAM_PLAYLIST_URL:-}
+      - ACESTREAM_URI=service_acestream
+      - ACESTREAM_PLAYLIST_URL=${ACESTREAM_PLAYLIST_URL:-file:///data/playlist.m3u}
+    volumes:
+      - ./folders/acestream:/data:ro   # плейлист: folders/acestream/playlist.m3u
     ports:
       - 8085:8080
 
