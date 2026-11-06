@@ -23,5 +23,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && curl -sSL "$ACESTREAM_URL" | tar -xz -C /opt/acestream
 COPY --from=builder /install/local /usr/local
 COPY --chmod=755 run.sh /run.sh
+COPY --chmod=755 clean.sh /clean.sh
 EXPOSE 6878
 ENTRYPOINT ["/usr/bin/tini", "-g", "--", "/run.sh"]
