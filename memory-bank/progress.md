@@ -11,7 +11,7 @@
 - ✅ **MeTube** service_metube (8081, yt-dlp web-UI, загрузки сразу в folders/media/youtube → Jellyfin/Plex) и **SearXNG** service_searxng (8888, метапоисковик): ждут docker compose up
 - ✅ **Bazarr** service_bazarr (6767, субтитры): в группе MEDIA, ждёт docker compose up
 - ✅ **Ace Stream Engine** service_acestream: 3.2.11, сборка из ubuntu:22.04 + официальный тарбл, порт 6878 (HTTP API/web-плеер); ждёт docker compose up
-- ✅ **Ace Stream Proxy + Web UI** service_acestream_proxy (:8085, шаринг сессий движка, HLS/TS, транскод, Swagger) + service_acestream_web (:8086, nginx-интерфейс к прокси, same-origin); сборка из github-репозитвеев автора, управление через make *-acestream (вся связка разом); ждут docker compose up
+- ✅ **Ace Stream Proxy + Web UI** service_acestream_proxy (:8085, шаринг сессий движка, HLS/TS, транскод, Swagger) + service_acestream_web (:8086, nginx-интерфейс к прокси, same-origin); сборка из github-репозитвеев автора, управление через make *-acestream (вся связка разом); движок ходим через host.docker.internal (host-gateway) — по имени сервиса из чужой docker-сети прокси не резолвился; ждут docker compose up
 - ✅ **Vaultwarden** service_vaultwarden (порт 8222, sqlite в folders/vaultwarden/config): Bitwarden-совместимый сервер паролей; клиенты по HTTP, web-vault требует HTTPS; ждёт docker compose up
 - ✅ **Docker Registry** service_registry (registry:2, порт 5000): хранилище собственных образов, без аутентификации (доверенная LAN); вместо Harbor (overkill). Ждёт docker compose up
 - ✅ **Telegram-прокси** service_tg_ws_proxy (FlowSeal/tg-ws-proxy v1.11.4, MTProto/WS, порт 1443): сборка из GitHub-контекста, секрет в .env; ждёт docker compose up

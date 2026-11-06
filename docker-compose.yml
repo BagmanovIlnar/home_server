@@ -339,9 +339,13 @@ services:
       context: https://github.com/BagmanovIlnar/acestream-proxy.git
     depends_on:
       - service_acestream
+    # Движок ходим через хост (host-gateway): если прокси окажется в другой
+    # docker-сети, имя service_acestream не резолвится и весь API падает
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       - TZ=${TZ:-Europe/Moscow}
-      - ACESTREAM_URI=service_acestream
+      - ACESTREAM_URI=host.docker.internal
     ports:
       - 8085:8080
 
