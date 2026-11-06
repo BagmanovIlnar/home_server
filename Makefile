@@ -132,7 +132,7 @@ build-media: ## скачать/обновить готовые образы medi
 remove: ## !!! удалить ВЕСЬ стек: контейнеры, образы, volume, сеть, ВСЕ данные
 	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить ВЕСЬ стек БЕЗВОЗВРАТНО (контейнеры, образы, volume, данные)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
 	docker compose down --rmi all --volumes --remove-orphans
-	rm -rf folders/samba_addc folders/users folders/share folders/transmission folders/plex_media_server \
+	sudo rm -rf folders/samba_addc folders/users folders/share folders/transmission folders/plex_media_server \
 	  folders/qbittorrent folders/radarr folders/sonarr folders/lidarr folders/bazarr folders/jellyfin folders/media folders/registry folders/vaultwarden folders/acestream folders/searxng folders/portainer
 	mkdir -p folders/samba_addc/etc folders/samba_addc/lib folders/users folders/share \
 	  folders/plex_media_server/library folders/plex_media_server/movies folders/plex_media_server/tvseries \
@@ -147,7 +147,7 @@ remove-dc: ## !!! удалить DC полностью: контейнер, об
 	@img=$$(docker compose images -q $(DC) 2>/dev/null); \
 	docker compose rm -sfv $(DC); \
 	if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
-	rm -rf folders/samba_addc; \
+	sudo rm -rf folders/samba_addc; \
 	mkdir -p folders/samba_addc/etc folders/samba_addc/lib; \
 	echo "OK: $(DC) удалён полностью (контейнер, образ, volume, база домена). NAS без DC неработоспособен!"
 	@$(PRUNE)
@@ -157,7 +157,7 @@ remove-nas: ## !!! удалить файловый сервер полность
 	@img=$$(docker compose images -q $(NAS) 2>/dev/null); \
 	docker compose rm -sfv $(NAS); \
 	if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
-	rm -rf folders/users folders/share; \
+	sudo rm -rf folders/users folders/share; \
 	mkdir -p folders/users folders/share; \
 	echo "OK: $(NAS) удалён полностью (контейнер, образ, volume, файлы пользователей)"
 	@$(PRUNE)
@@ -167,7 +167,7 @@ remove-media: ## !!! удалить весь media-стек: контейнер�
 	@imgs=$$(docker compose images -q $(MEDIA) 2>/dev/null); \
 	docker compose rm -sfv $(MEDIA); \
 	for i in $$imgs; do docker rmi $$i || true; done; \
-	rm -rf folders/qbittorrent folders/radarr folders/sonarr folders/lidarr folders/bazarr folders/jellyfin folders/media; \
+	sudo rm -rf folders/qbittorrent folders/radarr folders/sonarr folders/lidarr folders/bazarr folders/jellyfin folders/media; \
 	mkdir -p folders/qbittorrent/config folders/qbittorrent/downloads folders/radarr/config folders/sonarr/config \
 	  folders/lidarr/config folders/bazarr/config folders/jellyfin/config folders/media/movies folders/media/tv folders/media/music; \
 	echo "OK: media-стек удалён полностью (контейнеры, образы, volume, загрузки и медиатека)"
@@ -178,7 +178,7 @@ remove-plex: ## !!! удалить Plex полностью: контейнер, 
 	@img=$$(docker compose images -q $(PLEX) 2>/dev/null); \
 	docker compose rm -sfv $(PLEX); \
 	if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
-	rm -rf folders/plex_media_server; \
+	sudo rm -rf folders/plex_media_server; \
 	mkdir -p folders/plex_media_server/library folders/plex_media_server/movies folders/plex_media_server/tvseries; \
 	echo "OK: $(PLEX) удалён полностью (контейнер, образ, volume, медиатека)"
 	@$(PRUNE)
@@ -196,7 +196,7 @@ remove-registry: ## !!! удалить Docker Registry полностью: ко�
 	@img=$$(docker compose images -q $(REG) 2>/dev/null); \
 	docker compose rm -sfv $(REG); \
 	if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
-	rm -rf folders/registry; \
+	sudo rm -rf folders/registry; \
 	mkdir -p folders/registry; \
 	echo "OK: $(REG) удалён полностью (контейнер, образ, хранимые образы)"
 	@$(PRUNE)
@@ -206,7 +206,7 @@ remove-vaultwarden: ## !!! удалить Vaultwarden полностью: кон
 	@img=$$(docker compose images -q $(VW) 2>/dev/null); \
 	docker compose rm -sfv $(VW); \
 	if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
-	rm -rf folders/vaultwarden; \
+	sudo rm -rf folders/vaultwarden; \
 	mkdir -p folders/vaultwarden/config; \
 	echo "OK: $(VW) удалён полностью (контейнер, образ, база паролей)"
 	@$(PRUNE)
@@ -218,7 +218,7 @@ remove-acestream: ## !!! удалить Ace Stream полностью (движ�
 		docker compose rm -sfv $$s; \
 		if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
 	done; \
-	rm -rf folders/acestream; \
+	sudo rm -rf folders/acestream; \
 	mkdir -p folders/acestream; \
 	echo "OK: $(ACEALL) удалены полностью (контейнеры, образы, кэш)"
 	@$(PRUNE)
@@ -228,7 +228,7 @@ remove-metube: ## !!! удалить MeTube полностью: контейне
 	@img=$$(docker compose images -q $(MT) 2>/dev/null); \
 	docker compose rm -sfv $(MT); \
 	if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
-	rm -rf folders/media/youtube; \
+	sudo rm -rf folders/media/youtube; \
 	mkdir -p folders/media/youtube; \
 	echo "OK: $(MT) удалён полностью (контейнер, образ, видео)"
 	@$(PRUNE)
@@ -238,7 +238,7 @@ remove-searxng: ## !!! удалить SearXNG полностью: контейн
 	@img=$$(docker compose images -q $(SXNG) 2>/dev/null); \
 	docker compose rm -sfv $(SXNG); \
 	if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
-	rm -rf folders/searxng; \
+	sudo rm -rf folders/searxng; \
 	echo "OK: $(SXNG) удалён (контейнер, образ, настройки)"
 	@$(PRUNE)
 
@@ -247,7 +247,7 @@ remove-portainer: ## !!! удалить Portainer полностью: конте
 	@img=$$(docker compose images -q $(PT) 2>/dev/null); \
 	docker compose rm -sfv $(PT); \
 	if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
-	rm -rf folders/portainer; \
+	sudo rm -rf folders/portainer; \
 	mkdir -p folders/portainer; \
 	echo "OK: $(PT) удалён полностью (контейнер, образ, настройки)"
 	@$(PRUNE)
