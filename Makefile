@@ -24,6 +24,9 @@ MT   := service_metube
 SXNG := service_searxng
 PT   := service_portainer
 MEDIA := service_qbittorrent service_radarr service_sonarr service_lidarr service_bazarr service_jellyfin
+# хвосты после remove-*: dangling-образы старых сборок + build cache
+# (базовые образы типа ubuntu остаются тегированными — их берёт только ручной docker image prune -a)
+PRUNE := docker image prune -f && docker builder prune -f
 
 .DEFAULT_GOAL := help
 .PHONY: help env \
@@ -136,7 +139,8 @@ remove: ## !!! удалить ВЕСЬ стек: контейнеры, обра�
 	  folders/qbittorrent/config folders/qbittorrent/downloads folders/radarr/config folders/sonarr/config \
 	  folders/lidarr/config folders/bazarr/config folders/jellyfin/config folders/media/movies folders/media/tv folders/media/music folders/media/youtube \
 	  folders/registry folders/vaultwarden/config folders/acestream folders/searxng folders/portainer
-	@echo "OK: стек удалён полностью (контейнеры, образы, volume, сеть, данные)"
+	@$(PRUNE)
+	@echo "OK: стек удалён полностью (контейнеры, образы, volume, сеть, данные, build cache)"
 
 remove-dc: ## !!! удалить DC полностью: контейнер, образ, volume, БАЗУ ДОМЕНА (folders/samba_addc)
 	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(DC) БЕЗВОЗВРАТНО (контейнер, образ, volume, базу домена — ВСЕ пользователи AD)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
@@ -146,6 +150,7 @@ remove-dc: ## !!! удалить DC полностью: контейнер, об
 	rm -rf folders/samba_addc; \
 	mkdir -p folders/samba_addc/etc folders/samba_addc/lib; \
 	echo "OK: $(DC) удалён полностью (контейнер, образ, volume, база домена). NAS без DC неработоспособен!"
+	@$(PRUNE)
 
 remove-nas: ## !!! удалить файловый сервер полностью: контейнер, образ, volume, ВСЕ шары и каталоги юзеров
 	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(NAS) БЕЗВОЗВРАТНО (контейнер, образ, volume, все домашние каталоги и общую шару)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
@@ -155,6 +160,7 @@ remove-nas: ## !!! удалить файловый сервер полность
 	rm -rf folders/users folders/share; \
 	mkdir -p folders/users folders/share; \
 	echo "OK: $(NAS) удалён полностью (контейнер, образ, volume, файлы пользователей)"
+	@$(PRUNE)
 
 remove-media: ## !!! удалить весь media-стек: контейнеры, образы, volume, ВСЕ загрузки и медиатеку
 	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить media-стек (qBittorrent, Radarr, Sonarr, Lidarr, Bazarr, Jellyfin) БЕЗВОЗВРАТНО (контейнеры, образы, volume, ВСЕ загрузки и медиатеку)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
@@ -165,6 +171,7 @@ remove-media: ## !!! удалить весь media-стек: контейнер�
 	mkdir -p folders/qbittorrent/config folders/qbittorrent/downloads folders/radarr/config folders/sonarr/config \
 	  folders/lidarr/config folders/bazarr/config folders/jellyfin/config folders/media/movies folders/media/tv folders/media/music; \
 	echo "OK: media-стек удалён полностью (контейнеры, образы, volume, загрузки и медиатека)"
+	@$(PRUNE)
 
 remove-plex: ## !!! удалить Plex полностью: контейнер, образ, volume, библиотеку и медиа
 	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(PLEX) БЕЗВОЗВРАТНО (контейнер, образ, volume, библиотеку и ВСЁ медиа)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
@@ -174,6 +181,7 @@ remove-plex: ## !!! удалить Plex полностью: контейнер, 
 	rm -rf folders/plex_media_server; \
 	mkdir -p folders/plex_media_server/library folders/plex_media_server/movies folders/plex_media_server/tvseries; \
 	echo "OK: $(PLEX) удалён полностью (контейнер, образ, volume, медиатека)"
+	@$(PRUNE)
 
 remove-tg: ## !!! удалить Telegram-прокси полностью: контейнер + образ (данных нет)
 	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(TG) (контейнер + образ)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
@@ -181,6 +189,7 @@ remove-tg: ## !!! удалить Telegram-прокси полностью: ко�
 	docker compose rm -sfv $(TG); \
 	if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
 	echo "OK: $(TG) удалён (контейнер, образ)"
+	@$(PRUNE)
 
 remove-registry: ## !!! удалить Docker Registry полностью: контейнер, образ, ВСЕ образы в folders/registry
 	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(REG) БЕЗВОЗВРАТНО (контейнер, образ, ВСЕ хранимые образы)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
@@ -190,6 +199,7 @@ remove-registry: ## !!! удалить Docker Registry полностью: ко�
 	rm -rf folders/registry; \
 	mkdir -p folders/registry; \
 	echo "OK: $(REG) удалён полностью (контейнер, образ, хранимые образы)"
+	@$(PRUNE)
 
 remove-vaultwarden: ## !!! удалить Vaultwarden полностью: контейнер, образ, ВСЕ пароли (folders/vaultwarden)
 	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(VW) БЕЗВОЗВРАТНО (контейнер, образ, база паролей ВСЕХ пользователей)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
@@ -199,6 +209,7 @@ remove-vaultwarden: ## !!! удалить Vaultwarden полностью: кон
 	rm -rf folders/vaultwarden; \
 	mkdir -p folders/vaultwarden/config; \
 	echo "OK: $(VW) удалён полностью (контейнер, образ, база паролей)"
+	@$(PRUNE)
 
 remove-acestream: ## !!! удалить Ace Stream полностью (движок + Proxy + Web UI): контейнеры, образы, кэш (folders/acestream)
 	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(ACEALL) БЕЗВОЗВРАТНО (контейнеры, образы, кэш стримов)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
@@ -210,6 +221,7 @@ remove-acestream: ## !!! удалить Ace Stream полностью (движ�
 	rm -rf folders/acestream; \
 	mkdir -p folders/acestream; \
 	echo "OK: $(ACEALL) удалены полностью (контейнеры, образы, кэш)"
+	@$(PRUNE)
 
 remove-metube: ## !!! удалить MeTube полностью: контейнер, образ, ВСЕ загруженные видео (/media/youtube)
 	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(MT) БЕЗВОЗВРАТНО (контейнер, образ, ВСЕ видео в folders/media/youtube)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
@@ -219,6 +231,7 @@ remove-metube: ## !!! удалить MeTube полностью: контейне
 	rm -rf folders/media/youtube; \
 	mkdir -p folders/media/youtube; \
 	echo "OK: $(MT) удалён полностью (контейнер, образ, видео)"
+	@$(PRUNE)
 
 remove-searxng: ## !!! удалить SearXNG полностью: контейнер, образ, настройки
 	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(SXNG) (контейнер, образ, настройки)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
@@ -227,6 +240,7 @@ remove-searxng: ## !!! удалить SearXNG полностью: контейн
 	if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
 	rm -rf folders/searxng; \
 	echo "OK: $(SXNG) удалён (контейнер, образ, настройки)"
+	@$(PRUNE)
 
 remove-portainer: ## !!! удалить Portainer полностью: контейнер, образ, настройки и пользователей (folders/portainer)
 	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(PT) БЕЗВОЗВРАТНО (контейнер, образ, настройки и учётки Portainer)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
@@ -236,6 +250,7 @@ remove-portainer: ## !!! удалить Portainer полностью: конте
 	rm -rf folders/portainer; \
 	mkdir -p folders/portainer; \
 	echo "OK: $(PT) удалён полностью (контейнер, образ, настройки)"
+	@$(PRUNE)
 
 # ---------- СТАТУС / ЛОГИ ----------
 

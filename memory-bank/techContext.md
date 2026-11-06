@@ -44,6 +44,6 @@
 - `make user-del U=<user>` / `make user-pass U= P=` / `make users` — удаление/пароль/список
 - `make env` / `up[-dc|nas|plex|media]` / `down[-...]` — запуск/остановка (всего стека или по сервису; down = только stop, данные живы)
 - `make build[-dc|nas]` — сборка кастомных образов
-- `make remove[-dc|nas|plex|media]` — ПОЛНОЕ удаление: контейнер + образ + анонимные volume + данные в folders/ (rm -rf с восстановлением git-заглушек .gitignore); подтверждение через read, обход — CONFIRM=yes; цель — чтобы docker prune был не нужен
+- `make remove[-dc|nas|plex|media|acestream|...]` — ПОЛНОЕ удаление: контейнер + образ + анонимные volume + данные в folders/ (rm -rf с восстановлением git-заглушек .gitignore); подтверждение через read, обход — CONFIRM=yes; каждая remove-цель в конце чистит хвосты (PRUNE = docker image prune -f && docker builder prune -f) — docker prune не нужен; базовые образы остаются тегированными (убирает только ручной docker image prune -a)
 - Управление руками: `docker compose ...`; при down/up member сам переjoin'ится — штатно
 - Диагностика домена: `docker exec service_samba_addc samba-tool dns query localhost HOME.ARPA @ ALL -U administrator`
