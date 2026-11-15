@@ -68,3 +68,4 @@
 
 ## Current Work
 - Fix: service_samba_addc циклически перезапускался — `samba-tool domain provision --server-role=active-directory-domain-controller` невалиден (такого choice нет в этой версии samba). Исправлено на `--server-role=dc` в `services/samba_addc/run.sh`. После фикса: `docker compose up -d service_samba_addc` (при пустом folders/samba_addc/lib пройдёт provisioning заново).
+- Fix2: provisioning падал на secrets.ldb — "Module [samba_secrets] not found / LDB_MODULES_PATH". Причина: в образе нет пакета `samba-dsdb-modules` (ldb-модули samba_secrets/samba_dsdb и т.п., samba-ad-provision его в 26.04 не тянет). Добавлен в Dockerfile. После пересборки НУЖНО стереть недоустроенный домен: rm -rf folders/samba_addc/lib folders/samba_addc/etc (там мусор от упавшего provisioning), иначе повторный provision упадёт на чужом secrets.ldb.

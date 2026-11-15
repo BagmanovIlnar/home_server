@@ -10,7 +10,7 @@ RUN echo 'krb5-config krb5-config/default_realm string HOME.ARPA' | debconf-set-
  && apt-get update \
     && apt-get upgrade -y \
     && apt-get install -yy tzdata \
-    && apt-get install -y samba samba-ad-provision \
+    && apt-get install -y samba samba-ad-provision samba-dsdb-modules \
     && apt-get install -y krb5-user \
     && apt-get install -y dnsutils \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
