@@ -70,3 +70,11 @@
 - Fix: service_samba_addc циклически перезапускался — `samba-tool domain provision --server-role=active-directory-domain-controller` невалиден (такого choice нет в этой версии samba). Исправлено на `--server-role=dc` в `services/samba_addc/run.sh`. После фикса: `docker compose up -d service_samba_addc` (при пустом folders/samba_addc/lib пройдёт provisioning заново).
 - Fix2: provisioning падал на secrets.ldb — "Module [samba_secrets] not found / LDB_MODULES_PATH". Причина: в образе нет пакета `samba-dsdb-modules` (ldb-модули samba_secrets/samba_dsdb и т.п., samba-ad-provision его в 26.04 не тянет). Добавлен в Dockerfile. После пересборки НУЖНО стереть недоустроенный домен: rm -rf folders/samba_addc/lib folders/samba_addc/etc (там мусор от упавшего provisioning), иначе повторный provision упадёт на чужом secrets.ldb.
 - Fix3: provisioning падал в конце на setsysvolacl — smbd.set_nt_acl Access Denied (NT_STATUS_ACCESS_DENIED 0xC0000022) в docker. Добавлен --skip-sysvolacl в run.sh (обоснование: DC не публикует 445/SYSVOL, GPO не используются — ACL sysvol не нужны). ВАЖНО: после каждого падения provisioning стирать folders/samba_addc/{lib,etc} перед повтором, иначе мусорная полубаза.
+
+## Fix DC — финальная сводка (проверено в локальном docker на ubuntu:26.04 + samba 4.23.6)
+- --skip-sysvolacl в samba-tool НЕ существует (skip_sysvolacl=False захардкожен в netcmd) — откатил, прошлый совет был неверным
+- Корень Access Denied: fsetxattr("security.NTACL") = EPERM — запись в security.* xattr требует CAP_SYS_ADMIN, которого в docker по умолчанию нет. Фикс: cap_add SYS_ADMIN у service_samba_addc в docker-compose.yml
+- Скрытый баг: в ubuntu 26.04 демон /usr/sbin/samba вынесен в пакет samba-ad-dc (samba-ad-provision = только schema-файлы). Добавлен в Dockerfile (+ уже был samba-dsdb-modules)
+- run.sh: rm -f /etc/samba/smb.conf перед provision (пакетный standalone-conf ломает provision) + resolv.conf -> 127.0.0.1 (samba_dnsupdate шумел об embedded-DNS)
+- Верификация: provision ok, DC стартует, SRV _ldap._tcp резолвится, рестарт = "Existing domain database found", 0 ошибок в логах
+- На сервере ОБЯЗАТЕЛЬНО: rm -rf folders/samba_addc/lib folders/samba_addc/etc перед make build-dc && make up

@@ -19,6 +19,8 @@ services:
       - HOSTNAME=${AD_DC_HOSTNAME:-dc1}
       - DNS_FORWARDER=${AD_DNS_FORWARDER:-1.1.1.1}
       - ADMIN_PASS=${AD_ADMIN_PASSWORD:?Set AD_ADMIN_PASSWORD in .env (see .env.example)}
+    cap_add:
+      - SYS_ADMIN   # запись xattr security.NTACL: без этого provision падает Access Denied
     networks:
       network_service:
         ipv4_address: 172.28.0.53   # фиксированный IP внутри docker-сети (используется как DNS)

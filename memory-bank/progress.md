@@ -47,3 +47,4 @@
 - 2024+: Убрана авторизация Transmission для удобства в домашней сети
 - 2025: Vaultwarden переведён на официальный образ vaultwarden/server (lscr.io/linuxserver/vaultwarden не существует — `denied` из registry валил весь make up); атрибут `version` удалён из docker-compose.yml
 - 2025: фикс crash-loop DC: `--server-role` в run.sh заменён `active-directory-domain-controller` → `dc` (валидные choice: domain controller/dc/member server/member/standalone)
+- 2025: DC в docker: финальный фикс provisioning — cap_add SYS_ADMIN (security.NTACL xattr EPERM), пакет samba-ad-dc (демон вынесен из samba в 26.04), очистка пакетного smb.conf и resolv.conf в run.sh. Вся цепочка проверена локально на samba 4.23.6
