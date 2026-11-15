@@ -65,3 +65,6 @@
 - Docker embedded DNS не отдаёт SRV-записи — поэтому member'у прописан `dns: 172.28.0.53` (фиксированный IP DC в сети network_service)
 - Проблема «не авторизован / нет доступа» в Plex — см. README
 - Samba-пользователи не переживают пересоздание контейнера — это главное, что надо помнить при миграции/восстановлении
+
+## Current Work
+- Fix: service_samba_addc циклически перезапускался — `samba-tool domain provision --server-role=active-directory-domain-controller` невалиден (такого choice нет в этой версии samba). Исправлено на `--server-role=dc` в `services/samba_addc/run.sh`. После фикса: `docker compose up -d service_samba_addc` (при пустом folders/samba_addc/lib пройдёт provisioning заново).

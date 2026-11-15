@@ -19,7 +19,7 @@ if [ ! -f /var/lib/samba/private/sam.ldb ]; then
         --realm="${REALM}" \
         --domain="${DOMAIN}" \
         --host-name="${HOSTNAME}" \
-        --server-role=active-directory-domain-controller \
+        --server-role=dc \
         --dns-backend=SAMBA_INTERNAL \
         --adminpass="${ADMIN_PASS}" \
         --option="dns forwarder = ${DNS_FORWARDER}" \

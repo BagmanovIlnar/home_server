@@ -46,3 +46,4 @@
 - FTP-сервис был рабочей альтернативой файлового доступа, но вытеснен Samba и отключён
 - 2024+: Убрана авторизация Transmission для удобства в домашней сети
 - 2025: Vaultwarden переведён на официальный образ vaultwarden/server (lscr.io/linuxserver/vaultwarden не существует — `denied` из registry валил весь make up); атрибут `version` удалён из docker-compose.yml
+- 2025: фикс crash-loop DC: `--server-role` в run.sh заменён `active-directory-domain-controller` → `dc` (валидные choice: domain controller/dc/member server/member/standalone)
