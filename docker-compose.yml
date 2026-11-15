@@ -31,15 +31,17 @@ services:
       - /run/samba
       - /var/cache/samba
     ports:
-      - "53:53"        # DNS (tcp/udp)
-      - "53:53/udp"
-      - "88:88"        # Kerberos (tcp/udp)
-      - "88:88/udp"
+      # 53/88/464 НЕ публикуются: DNS/Kerberos нужны только в docker-сети (member ходит на 172.28.0.53).
+      # Раскомментировать, если реальные машины в LAN будут вводиться в домен (им нужен DC-DNS и Kerberos):
+      # - "53:53"        # DNS (tcp/udp)
+      # - "53:53/udp"
+      # - "88:88"        # Kerberos (tcp/udp)
+      # - "88:88/udp"
       - "135:135"      # RPC endpoint mapper
       - "389:389"      # LDAP (tcp/udp)
       - "389:389/udp"
-      - "464:464"      # kpasswd (tcp/udp)
-      - "464:464/udp"
+      # - "464:464"    # kpasswd (tcp/udp) — не публикуется, см. 53/88 выше
+      # - "464:464/udp"
       - "636:636"      # LDAPS
       - "3268:3268"    # Global Catalog
       - "3269:3269"    # Global Catalog over TLS

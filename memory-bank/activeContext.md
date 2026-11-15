@@ -78,3 +78,4 @@
 - run.sh: rm -f /etc/samba/smb.conf перед provision (пакетный standalone-conf ломает provision) + resolv.conf -> 127.0.0.1 (samba_dnsupdate шумел об embedded-DNS)
 - Верификация: provision ok, DC стартует, SRV _ldap._tcp резолвится, рестарт = "Existing domain database found", 0 ошибок в логах
 - На сервере ОБЯЗАТЕЛЬНО: rm -rf folders/samba_addc/lib folders/samba_addc/etc перед make build-dc && make up
+- Публикация портов DC на хост сокращена: 53/88/464 закомментированы (LAN-клиенты в домен не входят; member работает по сети network_service 172.28.0.53). Раскомментировать при вводе реальных машин в домен
