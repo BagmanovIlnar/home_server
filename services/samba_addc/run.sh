@@ -12,10 +12,12 @@ set -e
 : "${ADMIN_PASS:?ADMIN_PASS is required (set AD_ADMIN_PASSWORD in .env)}"
 : "${TZ:=Europe/Moscow}"
 
+# ponytail: --skip-sysvolacl — DC не публикует 445/SYSVOL (нет GPO), а smbd.set_nt_acl в docker падает Access Denied
 if [ ! -f /var/lib/samba/private/sam.ldb ]; then
     echo ">>> [samba_addc] First start: provisioning domain ${DOMAIN} (${REALM}), DNS forwarder: ${DNS_FORWARDER}"
     samba-tool domain provision \
         --use-rfc2307 \
+        --skip-sysvolacl \
         --realm="${REALM}" \
         --domain="${DOMAIN}" \
         --host-name="${HOSTNAME}" \
