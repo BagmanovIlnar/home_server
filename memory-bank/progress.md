@@ -16,7 +16,7 @@
 - ✅ **Docker Registry** service_registry (registry:2, порт 5000): хранилище собственных образов, без аутентификации (доверенная LAN); вместо Harbor (overkill). Ждёт docker compose up
 - ✅ **Telegram-прокси** service_tg_ws_proxy (FlowSeal/tg-ws-proxy v1.11.4, MTProto/WS, порт 1443): сборка из GitHub-контекста, секрет в .env; ждёт docker compose up
 - ✅ **HLS-DL** service_hls_dl (порт 8087, сборка из github BagmanovIlnar/hls_dl): загрузчик видео HLS/m3u8 + headless-chromium для «сложных» плееров + yt-dlp; **вход доменными учётками** (AUTH_MODE=ad, LDAP-bind к service_samba_addc:389 из network_service); персональные каталоги downloads/<логин>, WebDAV /dav; загрузки в folders/hls_dl; ждёт docker compose up
-- ✅ **LDAP Manager** service_ldap_manager (порт 8088, сборка из github BagmanovIlnar/ldap_manager): web-менеджер каталога AD — дерево, правка записей, группы, смена паролей; **вход доменными учётками** (pass-through bind к service_samba_addc:389), без состояния — томов/данных нет; ждёт docker compose up
+- ✅ **LDAP Manager** service_ldap_manager (порт 8088, сборка из github BagmanovIlnar/ldap_manager): web-менеджер каталога AD — дерево, правка записей, группы, смена паролей; **вход доменными учётками** (pass-through bind к service_samba_addc:389, в форме — полный DN вида CN=Administrator,CN=Users,DC=home,DC=arpa), без состояния — томов/данных нет; **развёрнут на сервере, работает** (192.168.1.37:8088); strong-auth-фикс проверен снаружи (LDAP 8 ушёл)
 - ✅ **Plex** (linuxserver): порт 32400, библиотека/фильмы/сериалы в `folders/plex_media_server/`, активирован (PLEX_CLAIM больше не нужен)
 - ✅ Все сервисы с `restart: always`, данные персистятся в `folders/`
 - ✅ README со ссылкой на решение проблемы авторизации Plex

@@ -1,7 +1,9 @@
 # Active Context: Home Server
 
 ## Current Work Focus
-**Добавлен service_ldap_manager — web-менеджер каталога AD** (ожидает развёртывания на сервере: make up-ldapmanager, первый запуск — сборка из github ~5 мин). Также ждёт развёртывания service_hls_dl.
+**LDAP Manager развёрнут и работает** (192.168.1.37:8088): make up-ldapmanager, вход CN=Administrator,CN=Users,DC=home,DC=arpa. Диагностика снаружи (ldapsearch/curl с Mac): DC-порты 135/389/636/3268/3269/49152 открыты, 53/88/464 не публикуются (штатно). service_hls_dl тоже развёрнут (8087 открыт), вход доменными учётками.
+
+⚠ Пароль Administrator сброшен через `samba-tool user setpassword` (временный) — НЕ совпадает с AD_ADMIN_PASSWORD в .env. Синхронизировать: либо вписать текущий в .env, либо сменить доменный на .env-значение. Урок: пароль домен получает при ПЕРВОМ provisioning, смена .env его не обновляет.
 
 ## Recent Changes (по git-истории)
 - 2026: FIX LDAP BIND: вход в ldap_manager (и вход по AD в hls_dl) падал с «LDAP 8: BindSimple: Transport encryption required» — Samba AD по умолчанию запрещает simple-bind по незашифрованному ldap://:389. Фикс: `ldap server require strong auth = No` в [global] smb.conf DC, run.sh вписывает её идемпотентно при каждом старте контейнера (grep+sed после provision/при existing domain — ручных команд на сервере не нужно, docker compose restart service_samba_addc достаточно). ponytail-потолок: пароли идут plaintext; альтернатива ldaps://:636 упирается в самоподписанный сертификат DC (CN dc1.<realm>, приложение ходит на service_samba_addc) — переключиться, когда в ldap_manager/hls_dl появится поддержка доверия к CA DC
