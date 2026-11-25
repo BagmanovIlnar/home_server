@@ -28,11 +28,16 @@ if [ ! -f /var/lib/samba/private/sam.ldb ]; then
         --dns-backend=SAMBA_INTERNAL \
         --adminpass="${ADMIN_PASS}" \
         --option="dns forwarder = ${DNS_FORWARDER}" \
-        --option="rpc server port = 49152"
+        --option="rpc server port = 49152" \
+        --option="ldap server require strong auth = No"  # ponytail: plaintext simple bind для ldap_manager/hls_dl; ldaps://636 после добавления поддержки TLS в приложения
     echo ">>> [samba_addc] Domain ${REALM} provisioned. Administrator password from .env"
 else
     echo ">>> [samba_addc] Existing domain database found, starting AD DC"
 fi
 
 # samba -i = запуск AD DC одним процессом в foreground (включая smbt_internal DNS)
+# ponytail: ldap server require strong auth = No в [global] smb.conf разрешает
+# simple-bind по 389 без TLS (ldap_manager/hls_dl биндятся plaintext). Альтернатива —
+# ldaps://:636, но у DC самоподписанный сертификат dc1.home.arpa — приложениям нужна
+# поддержка доверия к нему; переключиться, когда появится.
 exec /usr/sbin/samba -i
