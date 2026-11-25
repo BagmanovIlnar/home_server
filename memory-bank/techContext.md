@@ -15,6 +15,7 @@
 - **tg-ws-proxy** (FlowSeal/tg-ws-proxy, MTProto over WebSocket) — Telegram-прокси, порт 1443; образ собирается из git-контекста с пином тега v1.11.4; секрет TG_WS_PROXY_SECRET в .env (пусто = random на каждый рестарт)
 - **Plex Media Server** — образ `lscr.io/linuxserver/plex:latest`, порт 32400
 - **HLS-DL** (BagmanovIlnar/hls_dl, сборка из github-контекста) — загрузчик видео (HLS/m3u8, headless chromium, yt-dlp), порт 8087, Rust/axum, встроенный ffmpeg+chromium+yt-dlp в образе; вход через AD (AUTH_MODE=ad, LDAP-bind user@realm к DC через network_service); сеть: network_service (не default — только ради AD DC)
+- **LDAP Manager** (BagmanovIlnar/ldap_manager, сборка из github-контекста) — web-менеджер LDAP/AD-каталога (Rust, REST API + Swagger + web-UI), порт 8088; без состояния и томов — pass-through аутентификация (bind к DC от лица вошедшего), LDAP_BASE_DN из .env (AD_BASE_DN); сеть: network_service (только ради DC)
 - **vsftpd** (отключён), **Ace Stream** (отключён, образ не собирается)
 - **Shell-скрипты** (POSIX sh) — управление доменными пользователями через samba-tool
 

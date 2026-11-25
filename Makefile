@@ -22,6 +22,7 @@ ACEP := service_acestream_proxy service_acestream_web
 ACEALL := $(ACE) $(ACEP)
 MT   := service_metube
 HLS  := service_hls_dl
+LDAPM := service_ldap_manager
 SXNG := service_searxng
 PT   := service_portainer
 MEDIA := service_qbittorrent service_radarr service_sonarr service_lidarr service_bazarr service_jellyfin
@@ -31,10 +32,10 @@ PRUNE := docker image prune -f && docker builder prune -f
 
 .DEFAULT_GOAL := help
 .PHONY: help env \
-  up up-dc up-nas up-plex up-media up-tg up-registry up-vaultwarden up-acestream up-metube up-hlsdl up-searxng up-portainer \
-  down down-dc down-nas down-plex down-media down-tg down-registry down-vaultwarden down-acestream down-metube down-hlsdl down-searxng down-portainer \
-  build build-dc build-nas build-plex build-media build-tg build-registry build-vaultwarden build-acestream build-metube build-hlsdl build-searxng build-portainer \
-  remove remove-dc remove-nas remove-plex remove-media remove-tg remove-registry remove-vaultwarden remove-acestream remove-metube remove-hlsdl remove-searxng remove-portainer \
+  up up-dc up-nas up-plex up-media up-tg up-registry up-vaultwarden up-acestream up-metube up-hlsdl up-ldapmanager up-searxng up-portainer \
+  down down-dc down-nas down-plex down-media down-tg down-registry down-vaultwarden down-acestream down-metube down-hlsdl down-ldapmanager down-searxng down-portainer \
+  build build-dc build-nas build-plex build-media build-tg build-registry build-vaultwarden build-acestream build-metube build-hlsdl build-ldapmanager build-searxng build-portainer \
+  remove remove-dc remove-nas remove-plex remove-media remove-tg remove-registry remove-vaultwarden remove-acestream remove-metube remove-hlsdl remove-ldapmanager remove-searxng remove-portainer \
   logs ps users user-add user-del user-pass
 
 help: ## показать эту справку
@@ -58,6 +59,8 @@ up-metube: ## запустить MeTube (загрузка видео с YouTube 
 	docker compose up -d $(MT)
 up-hlsdl: ## запустить HLS-DL — загрузчик видео с входом через домен (первый запуск — сборка ~5 мин)
 	docker compose up -d $(HLS)
+up-ldapmanager: ## запустить LDAP Manager — web-менеджер каталога AD (первый запуск — сборка ~5 мин)
+	docker compose up -d $(LDAPM)
 up-searxng: ## запустить SearXNG (приватный поиск)
 	docker compose up -d $(SXNG)
 up-acestream: ## запустить Ace Stream: движок + Proxy + Web UI (первый запуск — сборка ~5 мин)
@@ -87,6 +90,8 @@ down-metube: ## остановить MeTube
 	docker compose stop $(MT)
 down-hlsdl: ## остановить HLS-DL
 	docker compose stop $(HLS)
+down-ldapmanager: ## остановить LDAP Manager
+	docker compose stop $(LDAPM)
 down-searxng: ## остановить SearXNG
 	docker compose stop $(SXNG)
 down-acestream: ## остановить Ace Stream (движок + Proxy + Web UI)
@@ -119,6 +124,8 @@ build-metube: ## скачать/обновить образ MeTube
 	docker compose pull $(MT)
 build-hlsdl: ## пересобрать образ HLS-DL из github
 	docker compose build $(HLS)
+build-ldapmanager: ## пересобрать образ LDAP Manager из github
+	docker compose build $(LDAPM)
 build-searxng: ## скачать/обновить образ SearXNG
 	docker compose pull $(SXNG)
 build-acestream: ## пересобрать образы Ace Stream (движок: версия — ACESTREAM_URL; proxy/web: обновление из github)
@@ -248,6 +255,14 @@ remove-hlsdl: ## !!! удалить HLS-DL полностью: контейне�
 	sudo rm -rf folders/hls_dl; \
 	mkdir -p folders/hls_dl/downloads folders/hls_dl/data; \
 	echo "OK: $(HLS) удалён полностью (контейнер, образ, загрузки)"
+	@$(PRUNE)
+
+remove-ldapmanager: ## !!! удалить LDAP Manager полностью: контейнер + образ (данных нет — сервис без состояния)
+	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(LDAPM) (контейнер + образ)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
+	@img=$$(docker compose images -q $(LDAPM) 2>/dev/null); \
+	docker compose rm -sfv $(LDAPM); \
+	if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
+	echo "OK: $(LDAPM) удалён (контейнер, образ)"
 	@$(PRUNE)
 
 remove-searxng: ## !!! удалить SearXNG полностью: контейнер, образ, настройки

@@ -284,6 +284,26 @@ services:
       - 8087:8080
 
   # ============================================================
+  # LDAP Manager — web-менеджер каталога AD (сборка из github):
+  # дерево записей, правка атрибутов, группы, смена паролей.
+  # БЕЗСОСТОЯНИЕ: pass-through аутентификация (bind к DC от лица
+  # вошедшего) — прав ровно столько, сколько домен даёт учётке
+  # ============================================================
+  service_ldap_manager:
+    restart: always
+    container_name: service_ldap_manager
+    build:
+      context: https://github.com/BagmanovIlnar/ldap_manager.git
+    environment:
+      - TZ=${TZ:-Europe/Moscow}
+      - LDAP_URL=ldap://service_samba_addc:389
+      - LDAP_BASE_DN=${AD_BASE_DN:-DC=home,DC=arpa}
+    networks:
+      network_service:  # только ради AD DC
+    ports:
+      - 8088:8080
+
+  # ============================================================
   # SearXNG — приватный метапоисковик (без трекинга)
   # settings.yml создаётся автоматически при первом старте
   # ============================================================
