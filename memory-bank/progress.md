@@ -49,5 +49,6 @@
 - 2024+: Убрана авторизация Transmission для удобства в домашней сети
 - 2025: Vaultwarden переведён на официальный образ vaultwarden/server (lscr.io/linuxserver/vaultwarden не существует — `denied` из registry валил весь make up); атрибут `version` удалён из docker-compose.yml
 - 2025: фикс crash-loop DC: `--server-role` в run.sh заменён `active-directory-domain-controller` → `dc` (валидные choice: domain controller/dc/member server/member/standalone)
+- 2026: DC: пароль Administrator синкается с .env при каждом старте (run.sh фоновая задача + samba-tool setpassword) — «первый вход» после запуска контейнера всегда паролем из .env; README/.env.example: формат логина LDAP Manager (UPN/DN, не голое имя), смена пароля только через .env + рестарт DC
 - 2026: FIX LDAP bind по 389: Samba AD отклоняет simple-bind без TLS («BindSimple: Transport encryption required», LDAP code 8) — run.sh DC вписывает `ldap server require strong auth = No` в [global] smb.conf идемпотентно при каждом старте (provision и existing domain); ldap_manager и hls_dl работают по plaintext-389 без ручных команд
 - 2025: DC в docker: финальный фикс provisioning — cap_add SYS_ADMIN (security.NTACL xattr EPERM), пакет samba-ad-dc (демон вынесен из samba в 26.04), очистка пакетного smb.conf и resolv.conf в run.sh. Вся цепочка проверена локально на samba 4.23.6

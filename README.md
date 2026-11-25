@@ -92,7 +92,7 @@ make ps / logs
 ⚠️ После `make remove-plex` сервер придётся заново привязать к plex.tv (Настройки → Удалённый доступ; при необходимости раскомментировать `PLEX_CLAIM` в docker-compose.yml с новым кодом с plex.tv/claim) и пересобрать библиотеки. Удалённый доступ извне LAN требует проброса порта 32400 на роутере.
 
 Доступ к персональной шаре: `\\<IP-сервера>\ivan`, логин `HOME\ivan`.
-Смена пароля Administrator: `docker exec -it service_samba_addc samba-tool user setpassword Administrator`.
+Смена пароля Administrator: правь `AD_ADMIN_PASSWORD` в `.env` и рестартни DC (`docker compose restart service_samba_addc`) — при старте пароль синхронизируется с доменом автоматически.
 
 ## Настройка media-стека (разовая, после первого `make up`)
 
@@ -276,7 +276,9 @@ Web-UI ([BagmanovIlnar/hls_dl](https://github.com/BagmanovIlnar/hls_dl), сбо�
 
 Web-UI ([BagmanovIlnar/ldap_manager](https://github.com/BagmanovIlnar/ldap_manager), сборка из github), порт `8088` + Swagger на `:8088/swagger-ui`. Дерево каталога, просмотр/правка записей, создание/удаление, группы (с составом и типами AD security/distribution), смена паролей — всё, что умеет LDAP, без RSAT и командной строки.
 
-**Вход — доменной учёткой:** pass-through — сервис просто делает bind к `service_samba_addc:389` с введёнными логином и паролем, ничего не хранит. Логин: `administrator` (или UPN `ivan@HOME.ARPA`), права — ровно те, что домен даёт этой учётке. Сервис в `network_service` (сеть AD DC), корневой DN — `AD_BASE_DN` из `.env`.
+**Вход — доменной учёткой:** pass-through — сервис делает bind к `service_samba_addc:389` с введёнными данными, ничего не хранит. Поле логина — UPN или полный DN: **`administrator@home.arpa`** (или `CN=Administrator,CN=Users,DC=home,DC=arpa`); голое `administrator` не резолвится. **Первый вход — паролем `AD_ADMIN_PASSWORD` из `.env`**: при старте DC пароль Administrator сбрасывается к `.env` автоматически (источник правды — меняй пароль там + рестарт DC). Права — ровно те, что домен даёт учётке. Сервис в `network_service` (сеть AD DC), корневой DN — `AD_BASE_DN` из `.env`.
+
+⚠ Пользователи, созданные через UI, получают запись в AD, но **без домашнего каталога** на файловом сервере — для каталога и шары `\<IP>\<логин>` используй `make user-add`.
 
 ## SearXNG (приватный поиск)
 

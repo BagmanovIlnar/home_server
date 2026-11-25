@@ -43,4 +43,21 @@ fi
 grep -q '^ldap server require strong auth' /etc/samba/smb.conf \
     || sed -i '/^\[global\]/a ldap server require strong auth = No' /etc/samba/smb.conf
 
+# Пароль Administrator = ADMIN_PASS из .env (источник правды): фоновая задача при
+# каждом старте DC дождётся поднятия samba и сбросит пароль — первый вход в домен
+# и LDAP Manager всегда паролем из .env, дрейфа пароля больше нет.
+# ponytail: пароль, сменённый иначе (UI/samba-tool), откатится к .env при рестарте DC;
+# фоновый потомок может остаться зомби под PID1 — не критично.
+( ok=no
+  for i in $(seq 1 60); do
+    samba-tool user setpassword administrator --newpassword="${ADMIN_PASS}" >/dev/null 2>&1 && ok=yes && break
+    sleep 2
+  done
+  if [ "$ok" = yes ]; then
+    echo ">>> [samba_addc] Administrator password synced from .env (вход: administrator@${REALM,,})"
+  else
+    echo ">>> [samba_addc] WARNING: не удалось синхронизировать пароль Administrator с .env"
+  fi
+) &
+
 exec /usr/sbin/samba -i
