@@ -21,6 +21,7 @@ ACE  := service_acestream
 ACEP := service_acestream_proxy service_acestream_web
 ACEALL := $(ACE) $(ACEP)
 MT   := service_metube
+HLS  := service_hls_dl
 SXNG := service_searxng
 PT   := service_portainer
 MEDIA := service_qbittorrent service_radarr service_sonarr service_lidarr service_bazarr service_jellyfin
@@ -30,10 +31,10 @@ PRUNE := docker image prune -f && docker builder prune -f
 
 .DEFAULT_GOAL := help
 .PHONY: help env \
-  up up-dc up-nas up-plex up-media up-tg up-registry up-vaultwarden up-acestream up-metube up-searxng up-portainer \
-  down down-dc down-nas down-plex down-media down-tg down-registry down-vaultwarden down-acestream down-metube down-searxng down-portainer \
-  build build-dc build-nas build-plex build-media build-tg build-registry build-vaultwarden build-acestream build-metube build-searxng build-portainer \
-  remove remove-dc remove-nas remove-plex remove-media remove-tg remove-registry remove-vaultwarden remove-acestream remove-metube remove-searxng remove-portainer \
+  up up-dc up-nas up-plex up-media up-tg up-registry up-vaultwarden up-acestream up-metube up-hlsdl up-searxng up-portainer \
+  down down-dc down-nas down-plex down-media down-tg down-registry down-vaultwarden down-acestream down-metube down-hlsdl down-searxng down-portainer \
+  build build-dc build-nas build-plex build-media build-tg build-registry build-vaultwarden build-acestream build-metube build-hlsdl build-searxng build-portainer \
+  remove remove-dc remove-nas remove-plex remove-media remove-tg remove-registry remove-vaultwarden remove-acestream remove-metube remove-hlsdl remove-searxng remove-portainer \
   logs ps users user-add user-del user-pass
 
 help: ## показать эту справку
@@ -55,6 +56,8 @@ up-portainer: ## запустить Portainer (web-UI для Docker)
 	docker compose up -d $(PT)
 up-metube: ## запустить MeTube (загрузка видео с YouTube и др.)
 	docker compose up -d $(MT)
+up-hlsdl: ## запустить HLS-DL — загрузчик видео с входом через домен (первый запуск — сборка ~5 мин)
+	docker compose up -d $(HLS)
 up-searxng: ## запустить SearXNG (приватный поиск)
 	docker compose up -d $(SXNG)
 up-acestream: ## запустить Ace Stream: движок + Proxy + Web UI (первый запуск — сборка ~5 мин)
@@ -82,6 +85,8 @@ down-portainer: ## остановить Portainer
 	docker compose stop $(PT)
 down-metube: ## остановить MeTube
 	docker compose stop $(MT)
+down-hlsdl: ## остановить HLS-DL
+	docker compose stop $(HLS)
 down-searxng: ## остановить SearXNG
 	docker compose stop $(SXNG)
 down-acestream: ## остановить Ace Stream (движок + Proxy + Web UI)
@@ -112,6 +117,8 @@ build-portainer: ## скачать/обновить образ Portainer
 	docker compose pull $(PT)
 build-metube: ## скачать/обновить образ MeTube
 	docker compose pull $(MT)
+build-hlsdl: ## пересобрать образ HLS-DL из github
+	docker compose build $(HLS)
 build-searxng: ## скачать/обновить образ SearXNG
 	docker compose pull $(SXNG)
 build-acestream: ## пересобрать образы Ace Stream (движок: версия — ACESTREAM_URL; proxy/web: обновление из github)
@@ -133,12 +140,12 @@ remove: ## !!! удалить ВЕСЬ стек: контейнеры, обра�
 	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить ВЕСЬ стек БЕЗВОЗВРАТНО (контейнеры, образы, volume, данные)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
 	docker compose down --rmi all --volumes --remove-orphans
 	sudo rm -rf folders/samba_addc folders/users folders/share folders/transmission folders/plex_media_server \
-	  folders/qbittorrent folders/radarr folders/sonarr folders/lidarr folders/bazarr folders/jellyfin folders/media folders/registry folders/vaultwarden folders/acestream folders/searxng folders/portainer
+	  folders/qbittorrent folders/radarr folders/sonarr folders/lidarr folders/bazarr folders/jellyfin folders/media folders/registry folders/vaultwarden folders/acestream folders/hls_dl folders/searxng folders/portainer
 	mkdir -p folders/samba_addc/etc folders/samba_addc/lib folders/users folders/share \
 	  folders/plex_media_server/library folders/plex_media_server/movies folders/plex_media_server/tvseries \
 	  folders/qbittorrent/config folders/qbittorrent/downloads folders/radarr/config folders/sonarr/config \
 	  folders/lidarr/config folders/bazarr/config folders/jellyfin/config folders/media/movies folders/media/tv folders/media/music folders/media/youtube \
-	  folders/registry folders/vaultwarden/config folders/acestream folders/searxng folders/portainer
+	  folders/registry folders/vaultwarden/config folders/acestream folders/hls_dl/downloads folders/hls_dl/data folders/searxng folders/portainer
 	@$(PRUNE)
 	@echo "OK: стек удалён полностью (контейнеры, образы, volume, сеть, данные, build cache)"
 
@@ -231,6 +238,16 @@ remove-metube: ## !!! удалить MeTube полностью: контейне
 	sudo rm -rf folders/media/youtube; \
 	mkdir -p folders/media/youtube; \
 	echo "OK: $(MT) удалён полностью (контейнер, образ, видео)"
+	@$(PRUNE)
+
+remove-hlsdl: ## !!! удалить HLS-DL полностью: контейнер, образ, ВСЕ загрузки (folders/hls_dl)
+	@if [ "$(CONFIRM)" != "yes" ]; then printf "Удалить $(HLS) БЕЗВОЗВРАТНО (контейнер, образ, ВСЕ загрузки в folders/hls_dl)? Введите yes: "; read a; [ "$$a" = "yes" ] || { echo "ОТМЕНЕНО"; exit 1; }; fi
+	@img=$$(docker compose images -q $(HLS) 2>/dev/null); \
+	docker compose rm -sfv $(HLS); \
+	if [ -n "$$img" ]; then docker rmi $$img || true; fi; \
+	sudo rm -rf folders/hls_dl; \
+	mkdir -p folders/hls_dl/downloads folders/hls_dl/data; \
+	echo "OK: $(HLS) удалён полностью (контейнер, образ, загрузки)"
 	@$(PRUNE)
 
 remove-searxng: ## !!! удалить SearXNG полностью: контейнер, образ, настройки

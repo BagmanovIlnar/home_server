@@ -1,6 +1,6 @@
 # Home Server
 
-Домашний сервер на Docker Compose: **Active Directory (Samba AD DC)** + файловый сервер (Samba) + media-стек: **qBittorrent → Radarr/Sonarr/Lidarr (+Bazarr) → Jellyfin** + медиасервер **Plex**, Ace Stream, MeTube (видео с YouTube), Telegram-прокси, Docker Registry, Vaultwarden (пароли) и SearXNG (поиск).
+Домашний сервер на Docker Compose: **Active Directory (Samba AD DC)** + файловый сервер (Samba) + media-стек: **qBittorrent → Radarr/Sonarr/Lidarr (+Bazarr) → Jellyfin** + медиасервер **Plex**, Ace Stream, MeTube (видео с YouTube), HLS-DL (загрузчик видео с входом через домен), Telegram-прокси, Docker Registry, Vaultwarden (пароли) и SearXNG (поиск).
 
 Единая аутентификация для **Linux, Windows, macOS** через собственный домен `HOME.ARPA`.
 
@@ -24,6 +24,7 @@
 | `service_acestream_proxy` | Ace Stream Proxy — шаринг сессий движка, HLS/TS, транскод | 8085 |
 | `service_acestream_web` | Ace Stream Web UI — веб-интерфейс к прокси | 8086 |
 | `service_metube` | MeTube — загрузка видео с YouTube и 100+ сайтов (yt-dlp) → /media/youtube | 8081 |
+| `service_hls_dl` | HLS-DL — загрузчик видео (HLS/m3u8, YouTube, сайты с плеерами), **вход через домен AD** | 8087 |
 | `service_searxng` | SearXNG — приватный метапоисковик | 8888 |
 | `service_portainer` | Portainer — web-UI управления Docker | 9443 |
 | ~~service_ftp~~ | Отключён (закомментирован) | — |
@@ -56,7 +57,7 @@ make logs   # ждать "provisioned" у service_samba_addc и статуса h
 
 ```bash
 # запуск / остановка / сборка: весь стек или по группе
-# (up-dc, up-nas, up-plex, up-media, up-tg, up-registry, up-vaultwarden, up-acestream, up-metube, up-searxng, up-portainer)
+# (up-dc, up-nas, up-plex, up-media, up-tg, up-registry, up-vaultwarden, up-acestream, up-metube, up-hlsdl, up-searxng, up-portainer)
 make up / down / build            # весь стек (down = только остановка, данные живы)
 make up-nas / down-nas / build-dc # конкретный сервис
 
@@ -70,6 +71,7 @@ make remove-registry              # + ВСЕ образы в registry
 make remove-vaultwarden           # + база паролей ВСЕХ пользователей!
 make remove-acestream             # + кэш стримов (движок + Proxy + Web UI)
 make remove-metube                # + все загруженные видео
+make remove-hlsdl                 # + все загрузки HLS-DL (folders/hls_dl)
 make remove-searxng               # + настройки поиска
 make remove-portainer             # + настройки и учётки Portainer
 make remove-plex                   # + медиатека
@@ -260,6 +262,14 @@ Web-UI для yt-dlp (`alexta69/metube`), порт `8081`. Вставляешь 
 
 Basic-авторизация (если в LAN есть посторонние): раскомментируй `USER`/`PASS` в docker-compose.yml → `make up-metube`.
 
+## HLS-DL (загрузчик видео с входом через домен)
+
+Web-UI ([BagmanovIlnar/hls_dl](https://github.com/BagmanovIlnar/hls_dl), сборка из github), порт `8087`. Качает HLS/m3u8-потоки, видео с сайтов со «сложными» плеерами (headless chromium выуживает прямые ссылки) и YouTube (yt-dlp). Внутри — файловый менеджер, загрузка файлов и WebDAV (`http://<IP>:8087/dav/`).
+
+**Вход — доменной учёткой:** `AUTH_MODE=ad`, сервер делает LDAP-bind к `service_samba_addc:389` (пользователь `ivan` — бинд `ivan@HOME.ARPA`). Логин — просто имя пользователя (`ivan`, без `HOME\`), пароль доменный. Кэш успешной проверки ~10 минут, дальше сессия на неделю. В этом режиме админ-панели «Пользователи» нет — состав юзеров задаёт AD; каждому доменному юзеру при входе создаётся свой каталог `downloads/<логин>`, чужие не видны.
+
+Сервис подключён к `network_service` (сеть AD DC) — именно оттуда доступ к LDAP; загрузки хранятся в `folders/hls_dl/downloads` (отдельно от медиатеки; при желании смонтируй в `folders/media/youtube` — появятся в Jellyfin).
+
 ## SearXNG (приватный поиск)
 
 Метапоисковик (`searxng/searxng`), порт `8888` — агрегирует Google/Bing/DuckDuckGo и др., без трекинга и рекламы. Просто открой `http://<IP-сервера>:8888` и укажи адрес как поисковую систему в браузере (открой `:8888/preferences` → «Ваш браузер» — там готовые ссылки-подсказки).
@@ -357,7 +367,7 @@ echo "nameserver 192.168.1.1" | sudo tee /etc/resolv.conf    # IP твоего �
 
 - **Порт 445 занят файловым сервером**, DC его не публикует → Windows-клиенты не получают GPO/SYSVOL (групповые политики). Вход в домен, логин, аутентификация — работают. Если нужны GPO — переноси шары на DC.
 - **Порт 53 на хосте** должен быть свободен (конфликт с dnsmasq/AdGuard/Pi-hole, systemd-resolved обычно не мешает).
-- Все сервисы вне Samba (Plex, Jellyfin, qBittorrent, *arr, Vaultwarden, registry, Telegram-прокси, Ace Stream, MeTube, SearXNG) **не интегрируются с AD** — у них свои локальные аккаунты или их нет.
+- Все сервисы вне Samba (Plex, Jellyfin, qBittorrent, *arr, Vaultwarden, registry, Telegram-прокси, Ace Stream, MeTube, SearXNG) **не интегрируются с AD** — у них свои локальные аккаунты или их нет. Исключение — HLS-DL: вход доменными учётками (LDAP-bind к DC).
 - Машина-аккаунт файлового сервера пересоздаётся при `docker compose down/up` (автоматически, штатно).
 - **Бэкапить**: `folders/samba_addc/` (домен) и `folders/vaultwarden/` (все пароли) — потеря безвозвратна.
 

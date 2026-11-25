@@ -14,6 +14,7 @@
 - **registry:2** — Docker Registry, порт 5000, HTTP (клиентам нужен insecure-registries в daemon.json), данные в folders/registry, без аутентификации (доверенная LAN; Harbor отклонён как overkill)
 - **tg-ws-proxy** (FlowSeal/tg-ws-proxy, MTProto over WebSocket) — Telegram-прокси, порт 1443; образ собирается из git-контекста с пином тега v1.11.4; секрет TG_WS_PROXY_SECRET в .env (пусто = random на каждый рестарт)
 - **Plex Media Server** — образ `lscr.io/linuxserver/plex:latest`, порт 32400
+- **HLS-DL** (BagmanovIlnar/hls_dl, сборка из github-контекста) — загрузчик видео (HLS/m3u8, headless chromium, yt-dlp), порт 8087, Rust/axum, встроенный ffmpeg+chromium+yt-dlp в образе; вход через AD (AUTH_MODE=ad, LDAP-bind user@realm к DC через network_service); сеть: network_service (не default — только ради AD DC)
 - **vsftpd** (отключён), **Ace Stream** (отключён, образ не собирается)
 - **Shell-скрипты** (POSIX sh) — управление доменными пользователями через samba-tool
 

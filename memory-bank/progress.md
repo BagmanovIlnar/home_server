@@ -15,6 +15,7 @@
 - ✅ **Vaultwarden** service_vaultwarden (порт 8222, sqlite в folders/vaultwarden/config): Bitwarden-совместимый сервер паролей; клиенты по HTTP, web-vault требует HTTPS; ждёт docker compose up
 - ✅ **Docker Registry** service_registry (registry:2, порт 5000): хранилище собственных образов, без аутентификации (доверенная LAN); вместо Harbor (overkill). Ждёт docker compose up
 - ✅ **Telegram-прокси** service_tg_ws_proxy (FlowSeal/tg-ws-proxy v1.11.4, MTProto/WS, порт 1443): сборка из GitHub-контекста, секрет в .env; ждёт docker compose up
+- ✅ **HLS-DL** service_hls_dl (порт 8087, сборка из github BagmanovIlnar/hls_dl): загрузчик видео HLS/m3u8 + headless-chromium для «сложных» плееров + yt-dlp; **вход доменными учётками** (AUTH_MODE=ad, LDAP-bind к service_samba_addc:389 из network_service); персональные каталоги downloads/<логин>, WebDAV /dav; загрузки в folders/hls_dl; ждёт docker compose up
 - ✅ **Plex** (linuxserver): порт 32400, библиотека/фильмы/сериалы в `folders/plex_media_server/`, активирован (PLEX_CLAIM больше не нужен)
 - ✅ Все сервисы с `restart: always`, данные персистятся в `folders/`
 - ✅ README со ссылкой на решение проблемы авторизации Plex

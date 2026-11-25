@@ -18,11 +18,12 @@ docker-compose.yml
 │     service_radarr (7878) / service_sonarr (8989) / service_lidarr (8686) — импорт /downloads → /media/{movies,tv,music}
 │     service_jellyfin (8096) — библиотеки из /media; service_plex и service_metube (→ /media/youtube) тоже подключены к folders/media
 ├── service_plex           (linuxserver/plex, порт 32400)
+├── service_hls_dl         ← загрузчик видео (сборка из github), порт 8087; сеть: network_service (ради LDAP к DC); вход доменными учётками (AUTH_MODE=ad, LDAP-bind user@realm), загрузки folders/hls_dl/{downloads,data}
 ├── #service_ace_stream    (ЗАКОММЕНТИРОВАН)
 └── #service_ftp           (ЗАКОММЕНТИРОВАН)
 ```
 
-Сеть: `network_service` (subnet 172.28.0.0/24, DC — 172.28.0.53). Media-стек/Plex вне этой сети (default-сеть compose).
+Сеть: `network_service` (subnet 172.28.0.0/24, DC — 172.28.0.53). Media-стек/Plex вне этой сети (default-сеть compose). Исключение — service_hls_dl: тоже в network_service (единственный не-samba сервис с интеграцией AD).
 
 ## Key Technical Decisions
 - **Active Directory на Samba AD DC** в отдельном контейнере + файловый сервер как member (security=ads + winbind + idmap rid 10000-999999). Домен HOME.ARPA (RFC 8375), NetBIOS HOME, DC dc1 — всё переопределяется в `.env`

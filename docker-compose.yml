@@ -257,6 +257,33 @@ services:
     restart: always
 
   # ============================================================
+  # HLS-DL — загрузчик видео (сборка из github):
+  # HLS/m3u8, сайты с зашифрованными плеерами (headless chromium),
+  # YouTube (yt-dlp), свой файловый менеджер + WebDAV.
+  # ВХОД ЧЕРЕЗ ДОМЕН: AUTH_MODE=ad, LDAP-bind к Samba AD DC
+  # (сервис в network_service → видит service_samba_addc:389)
+  # ============================================================
+  service_hls_dl:
+    restart: always
+    container_name: service_hls_dl
+    build:
+      context: https://github.com/BagmanovIlnar/hls_dl.git
+    init: true          # docker-init жнёт зомби-хромы (PID 1 — наш сервер)
+    environment:
+      - TZ=${TZ:-Europe/Moscow}
+      - AUTH_MODE=ad
+      - AD_URL=ldap://service_samba_addc:389
+      - AD_DOMAIN=${AD_REALM:-HOME.ARPA}
+      - AUTH_DB_FILE=/data/users.sql
+    networks:
+      network_service:  # только ради AD DC; интернет идёт обычным маршрутом
+    volumes:
+      - ./folders/hls_dl/downloads:/app/downloads
+      - ./folders/hls_dl/data:/data   # база: журнал источников, настройки
+    ports:
+      - 8087:8080
+
+  # ============================================================
   # SearXNG — приватный метапоисковик (без трекинга)
   # settings.yml создаётся автоматически при первом старте
   # ============================================================
